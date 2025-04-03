@@ -1,0 +1,13 @@
+/* App.css ou index.css */
+
+.btn-vert {
+    background-color: #00B507 !important; /* Vert vif que tu utilises */
+    color: #fff !important;
+    border: none;
+  }
+  
+  .btn-vert:hover {
+    background-color: #00a000 !important; /* Un vert légèrement plus foncé au survol */
+    color: #fff !important;
+  }
+  
