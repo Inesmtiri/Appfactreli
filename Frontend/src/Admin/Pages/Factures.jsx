@@ -1,167 +1,189 @@
-import React, { useState } from "react";
-import { FaTrash } from "react-icons/fa";
-import FactureForm from "../components/Facture/FactureForm";// ✅ Correct
- // Assure-toi du chemin du fichier
+import React, { useState, useEffect } from "react";
+import { FaTrash, FaEdit } from "react-icons/fa";
+import axios from "axios";
+import FactureForm from "../components/Facture/FactureForm";
 
 const FacturePage = () => {
   const [factureList, setFactureList] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editData, setEditData] = useState(null);
 
-  // ➡️ Ajouter une facture
-  const handleAddFacture = (facture) => {
-    setFactureList([...factureList, facture]);
-    setShowForm(false);
+  useEffect(() => {
+    fetchFactures();
+  }, []);
+
+  const fetchFactures = async () => {
+    try {
+      const res = await axios.get("/api/factures");
+      setFactureList(res.data);
+    } catch (err) {
+      console.error("Erreur chargement factures :", err.message);
+    }
   };
 
-  // ➡️ Supprimer une facture
-  const handleDeleteFacture = (index) => {
-    const updated = factureList.filter((_, i) => i !== index);
-    setFactureList(updated);
+  const handleAddFacture = async (facture) => {
+    try {
+      if (editData) {
+        const res = await axios.put(`/api/factures/${editData._id}`, facture);
+        setFactureList(prev => prev.map(f => f._id === editData._id ? res.data : f));
+      } else {
+        const res = await axios.post("/api/factures", facture);
+        setFactureList(prev => [...prev, res.data]);
+      }
+      setShowForm(false);
+      setEditData(null);
+    } catch (err) {
+      console.error("Erreur ajout/modif facture :", err.message);
+    }
   };
 
-  // ➡️ Aperçu de la facture
+  const handleDeleteFacture = async (id) => {
+    try {
+      await axios.delete(`/api/factures/${id}`);
+      setFactureList(prev => prev.filter(f => f._id !== id));
+    } catch (err) {
+      console.error("Erreur suppression facture :", err.message);
+    }
+  };
+
+  const handleToggleStatut = async (id, statutActuel) => {
+    try {
+      const nouveauStatut = statutActuel === "payé" ? "non payé" : "payé";
+      const res = await axios.put(`/api/factures/${id}`, { statut: nouveauStatut });
+      const updated = factureList.map(f =>
+        f._id === id ? { ...f, statut: nouveauStatut } : f
+      );
+      setFactureList(updated);
+    } catch (err) {
+      console.error("Erreur statut :", err.message);
+    }
+  };
+
   const handleViewFacture = (facture) => {
     const factureHTML = `
-      <html>
-        <head>
-          <title>Facture ${facture.numeroFacture}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-            h1 { text-align: center; color: #167DB8; }
-            .header, .footer { text-align: center; margin-bottom: 20px; }
-            .info { margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-            th { background-color: #f2f2f2; }
-            .totals { text-align: right; }
-          </style>
-        </head>
-        <body>
-          <h1>${facture.nomEntreprise || "Nom Entreprise"}</h1>
-          <div class="header">
-            <strong>Téléphone :</strong> ${facture.telephone || "-"}
-          </div>
-          <div class="info">
-            <p><strong>Client :</strong> ${facture.client}</p>
-            <p><strong>Date :</strong> ${facture.date}</p>
-            <p><strong>Numéro de facture :</strong> ${facture.numeroFacture}</p>
-            <p><strong>Référence :</strong> ${facture.reference}</p>
-          </div>
+      <html><head><title>Facture ${facture.numeroFacture}</title>
+      <style>
+        body { font-family: Arial; margin: 40px; }
+        h1 { text-align: center; color: #167DB8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        .totals { text-align: right; margin-top: 20px; }
+      </style>
+      </head><body>
+        <h1>${facture.nomEntreprise || "Nom Entreprise"}</h1>
+        <p><strong>Téléphone:</strong> ${facture.telephone || "-"}</p>
+        <p><strong>Client:</strong> ${facture.client || "-"}</p>
+        <p><strong>Date:</strong> ${facture.date?.slice(0, 10) || "-"}</p>
+        <p><strong>Numéro:</strong> ${facture.numeroFacture}</p>
+        <p><strong>Référence:</strong> ${facture.reference}</p>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Quantité</th>
-                <th>Prix Unitaire</th>
-                <th>Total Ligne</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${facture.lignes
-                .map(
-                  (ligne) => `
-                <tr>
-                  <td>${ligne.description}</td>
-                  <td>${ligne.quantite}</td>
-                  <td>${ligne.prixUnitaire.toFixed(3)} TND</td>
-                  <td>${(ligne.quantite * ligne.prixUnitaire).toFixed(3)} TND</td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
+        <table><thead><tr>
+          <th>Description</th><th>Quantité</th><th>Prix U</th><th>Total</th>
+        </tr></thead><tbody>
+        ${facture.lignes.map(l => `
+          <tr>
+            <td>${l.designation}</td>
+            <td>${l.quantite}</td>
+            <td>${l.prixUnitaire.toFixed(3)} TND</td>
+            <td>${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
+          </tr>`).join("")}
+        </tbody></table>
 
-          <div class="totals">
-            <p><strong>Subtotal :</strong> ${facture.subtotal.toFixed(3)} TND</p>
-            <p><strong>Tax (19%) :</strong> ${facture.tax.toFixed(3)} TND</p>
-            <h3><strong>Total :</strong> ${facture.total.toFixed(3)} TND</h3>
-          </div>
-
-          <div class="footer">
-            <p>Merci pour votre confiance !</p>
-          </div>
-        </body>
-      </html>
+        <div class="totals">
+          <p><strong>Subtotal:</strong> ${facture.subtotal?.toFixed(3)} TND</p>
+          <p><strong>Tax:</strong> ${facture.tax?.toFixed(3)} TND</p>
+          <h3><strong>Total:</strong> ${facture.total?.toFixed(3)} TND</h3>
+        </div>
+      </body></html>
     `;
 
-    const newWindow = window.open("", "_blank", "width=800,height=600");
-    newWindow.document.write(factureHTML);
-    newWindow.document.close();
-    newWindow.print();
+    const win = window.open("", "_blank", "width=800,height=600");
+    win.document.write(factureHTML);
+    win.document.close();
+    win.print();
   };
 
   return (
     <div className="container mt-4">
-      {/* ✅ Header avec uniquement le bouton "Ajouter" */}
-      <div className="d-flex justify-content-end align-items-center mb-4">
+      <div className="d-flex justify-content-end mb-4">
         <button
           className="btn fw-bold"
-          onClick={() => setShowForm(true)}
-          style={{
-            backgroundColor: "#23BD15",
-            color: "white",
-            padding: "8px 20px",
-            borderRadius: "6px",
+          style={{ backgroundColor: "#23BD15", color: "white" }}
+          onClick={() => {
+            setEditData(null);
+            setShowForm(true);
           }}
         >
           Ajouter
         </button>
       </div>
 
-      {/* ✅ Affichage du formulaire si demandé */}
       {showForm && (
-        <div className="mb-4">
-          <FactureForm
-            onAddFacture={handleAddFacture}
-            onCancel={() => setShowForm(false)}
-          />
-        </div>
+        <FactureForm
+          onAddFacture={handleAddFacture}
+          onCancel={() => {
+            setShowForm(false);
+            setEditData(null);
+          }}
+          editData={editData}
+        />
       )}
 
-      {/* ✅ Liste des factures */}
       {!showForm && (
-        <div
-          className="card shadow-sm p-4 mx-auto"
-          style={{ maxWidth: "900px" }}
-        >
+        <div className="card shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
           <h6 className="mb-3 fst-italic">• Mes factures :</h6>
-
           {factureList.length === 0 ? (
-            <p className="text-center text-muted">
-              Aucune facture enregistrée pour l'instant.
-            </p>
+            <p className="text-center text-muted">Aucune facture pour l’instant.</p>
           ) : (
             <div className="d-flex flex-column gap-3">
-              {factureList.map((facture, index) => (
+              {factureList.map((facture) => (
                 <div
-                  key={index}
-                  className={`d-flex justify-content-between align-items-center border rounded px-4 py-3 ${
-                    index % 2 === 0 ? "bg-light" : "bg-white"
-                  }`}
-                  style={{
-                    cursor: "pointer",
-                    transition: "background-color 0.3s",
-                  }}
+                  key={facture._id}
+                  className="d-flex justify-content-between align-items-center border rounded px-4 py-3 bg-light"
                   onClick={() => handleViewFacture(facture)}
                 >
-                  <div className="d-flex align-items-center">
+                  <div>
                     <span className="fw-semibold fst-italic">
-                      {facture.client || "Client"} - {facture.numeroFacture || "N°"}
+                      {facture.nomEntreprise || "Entreprise"} - {facture.numeroFacture}
+                    </span>
+                    <span className={`ms-3 badge ${facture.statut === "payé" ? "bg-success" : "bg-warning text-dark"}`}>
+                      {facture.statut || "non payé"}
                     </span>
                   </div>
 
-                  <button
-                    className="btn btn-link text-dark p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteFacture(index);
-                    }}
-                    title="Supprimer cette facture"
-                  >
-                    <FaTrash size={16} />
-                  </button>
+                  <div className="d-flex gap-2">
+                    <button
+                      className={`btn btn-sm ${facture.statut === "payé" ? "btn-success" : "btn-warning"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatut(facture._id, facture.statut);
+                      }}
+                    >
+                      {facture.statut === "payé" ? "Payé" : "Non payé"}
+                    </button>
+
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditData(facture);
+                        setShowForm(true);
+                      }}
+                    >
+                      <FaEdit />
+                    </button>
+
+                    <button
+                      className="btn btn-link text-dark p-0"
+                      title="Supprimer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFacture(facture._id);
+                      }}
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

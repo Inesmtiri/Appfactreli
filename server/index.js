@@ -2,12 +2,16 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
 import userRoutes from './routes/userRoutes.js';
 import aboutRoutes from './routes/aboutRoutes.js';
 import projetRoutes from './routes/projetRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import utilisateurRoutes from './routes/utilisateurRoutes.js';
-
+import serviceRoutes from './routes/serviceRoutes.js';
+import produitRoutes from './routes/produitRoutes.js';
+import devisRoutes from './routes/devisRoutes.js'; // ✅ nouveau
+import factureRoutes from "./routes/factureRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -22,7 +26,10 @@ app.use('/api/about', aboutRoutes);
 app.use('/api/utilisateur', utilisateurRoutes);
 app.use('/api/projets', projetRoutes);
 app.use('/api/clients', clientRoutes);
-
+app.use('/api/services', serviceRoutes);
+app.use('/api/produits', produitRoutes);
+app.use('/api/devis', devisRoutes); // ✅ ajout route devis
+app.use("/api/factures", factureRoutes);
 const PORT = process.env.PORT || 3001;
 const MONGODB_URL = process.env.MONGODB_URL;
 
