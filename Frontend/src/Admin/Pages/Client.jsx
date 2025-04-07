@@ -59,7 +59,7 @@ const ClientPage = () => {
 
   return (
     <div className="mt-4" style={{ padding: "20px", marginLeft: "250px" }}>
-      {/* Formulaire d'ajout ou de modification */}
+      {/* ✅ Formulaire d’ajout ou modification */}
       {showForm && (
         <ClientForm
           onAddClient={handleAddClient}
@@ -72,78 +72,88 @@ const ClientPage = () => {
         />
       )}
 
-      {/* ✅ Carte contenant le bouton + tableau */}
-      <div
-        className="card p-4 shadow-sm"
-        style={{ width: "100%", maxWidth: "1100px", margin: "0 auto" }}
-      >
-       <div className="d-flex justify-content-end mb-3">
+      {/* ✅ Carte formulaire */}
+      <div className="card mb-4 shadow-sm mx-auto" style={{ maxWidth: "1150px" }}>
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="card-title fw-semibold">
+              {clientToEdit ? "✏️ Modifier un client" : "➕ Ajouter un client"}
+            </h5>
             <Button
               size="sm"
               onClick={() => setShowForm(true)}
+              className="fw-bold text-white"
               style={{
-                backgroundColor: "#00cc44",     // 🌱 Vert vif
+                backgroundColor: "#00cc44",
                 borderColor: "#00cc44",
-                color: "#fff",
-                fontWeight: "bold",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
               }}
             >
               + Ajouter
             </Button>
           </div>
+        </div>
+      </div>
 
-
-        {/* Tableau des clients */}
-        <h6 className="mb-3">📋 Liste des clients</h6>
-        <Table bordered hover responsive size="sm" style={{ fontSize: "13px" }}>
-          <thead className="table-light">
-            <tr>
-              <th>Nom</th>
-              <th>Prénom</th>
-              <th>Email</th>
-              <th>Société</th>
-              <th>Téléphone</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clients.map((client) => (
-              <tr key={client._id}>
-                <td>{client.nom}</td>
-                <td>{client.prenom}</td>
-                <td>{client.email}</td>
-                <td>{client.societe}</td>
-                <td>{client.telephone}</td>
-                <td className="text-center">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="me-2"
-                    title="Modifier"
-                    onClick={() => handleEditClick(client)}
-                  >
-                    <FaPen />
-                  </Button>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    title="Supprimer"
-                    onClick={() => handleDelete(client._id)}
-                  >
-                    <FaTrash />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {clients.length === 0 && (
-              <tr>
-                <td colSpan="6" className="text-center text-muted">
-                  Aucun client enregistré.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
+      {/* ✅ Carte tableau clients */}
+      <div className="card mx-auto shadow-sm" style={{ maxWidth: "1150px" }}>
+        <div className="card-body">
+          <h5 className="card-title fw-semibold mb-3">📋 Liste des clients</h5>
+          <div className="table-responsive">
+            <Table bordered hover responsive size="sm" style={{ fontSize: "15px" }}>
+              <thead className="table-light">
+                <tr>
+                  <th>Nom</th>
+                  <th>Prénom</th>
+                  <th>Email</th>
+                  <th>Société</th>
+                  <th>Téléphone</th>
+                  <th className="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.length > 0 ? (
+                  clients.map((client) => (
+                    <tr key={client._id}>
+                      <td>{client.nom}</td>
+                      <td>{client.prenom}</td>
+                      <td>{client.email}</td>
+                      <td>{client.societe}</td>
+                      <td>{client.telephone}</td>
+                      <td className="text-center">
+                        <div className="btn-group">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="me-1"
+                            title="Modifier"
+                            onClick={() => handleEditClick(client)}
+                          >
+                            <FaPen />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            title="Supprimer"
+                            onClick={() => handleDelete(client._id)}
+                          >
+                            <FaTrash />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted">
+                      Aucun client enregistré.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </div>
       </div>
     </div>
   );

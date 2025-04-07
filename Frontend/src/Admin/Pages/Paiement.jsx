@@ -1,108 +1,112 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css"; // Important pour les icônes
+
+const API_URL = "http://localhost:3001/api/paiements";
 
 const Paiement = () => {
-  const [paiements, setPaiements] = useState([
-    { id: 1, facture: "00001", datePaiement: "10/5/2024", typePaiement: "en ligne", montant: 500, statut: "payé" },
-    { id: 2, facture: "00002", datePaiement: "-", typePaiement: "-", montant: 800, statut: "non payé" },
-    { id: 3, facture: "00003", datePaiement: "22/7/2023", typePaiement: "hors ligne", montant: 300, statut: "payé" },
-  ]);
-
+  const [paiements, setPaiements] = useState([]);
   const [formData, setFormData] = useState({
-    facture: "",
+    numeroFacture: "",
     datePaiement: "",
     typePaiement: "",
     montant: "",
-    statut: "payé",
+    statut: true,
   });
-
   const [editId, setEditId] = useState(null);
+
+  const fetchPaiements = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setPaiements(res.data);
+    } catch (err) {
+      console.error("Erreur lors du chargement des paiements :", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPaiements();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleStatutToggle = () => {
-    setFormData({
-      ...formData,
-      statut: formData.statut === "payé" ? "non payé" : "payé",
-    });
+    setFormData((prev) => ({ ...prev, statut: !prev.statut }));
   };
 
-  const handleAddOrEditPaiement = (e) => {
+  const handleAddOrEditPaiement = async (e) => {
     e.preventDefault();
 
-    if (!formData.facture || !formData.montant) {
+    if (!formData.numeroFacture || !formData.montant) {
       alert("Veuillez remplir les champs obligatoires !");
       return;
     }
 
-    if (editId) {
-      const updatedPaiements = paiements.map((p) =>
-        p.id === editId ? { ...p, ...formData } : p
-      );
-      setPaiements(updatedPaiements);
-      setEditId(null);
-    } else {
-      const nouveauPaiement = {
-        id: paiements.length + 1,
-        ...formData,
-      };
-      setPaiements([...paiements, nouveauPaiement]);
+    try {
+      if (editId) {
+        await axios.put(`${API_URL}/${editId}`, formData);
+      } else {
+        await axios.post(API_URL, formData);
+      }
+      fetchPaiements();
+      resetForm();
+    } catch (err) {
+      console.error("Erreur :", err);
     }
-
-    resetForm();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Voulez-vous supprimer ce paiement ?")) {
-      setPaiements(paiements.filter((p) => p.id !== id));
-      if (editId === id) {
-        resetForm();
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        fetchPaiements();
+        if (editId === id) resetForm();
+      } catch (err) {
+        console.error("Erreur lors de la suppression :", err);
       }
     }
   };
 
   const handleEdit = (paiement) => {
-    setEditId(paiement.id);
+    setEditId(paiement._id);
     setFormData({ ...paiement });
   };
 
   const resetForm = () => {
     setFormData({
-      facture: "",
+      numeroFacture: "",
       datePaiement: "",
       typePaiement: "",
       montant: "",
-      statut: "payé",
+      statut: true,
     });
     setEditId(null);
   };
 
   return (
     <div style={{ marginLeft: "250px", padding: "20px" }}>
-
       {/* Formulaire */}
-      <div
-        className="p-4 bg-white rounded shadow-sm mb-4"
-        style={{ maxWidth: "1200px" }} // Agrandi à 1200px
-      >
-        <h5 className="mb-4 fw-bold text-primary">
+      <div className="p-4 bg-white rounded shadow-sm mb-4" style={{ maxWidth: "1200px", margin: "auto" }}>
+        <h5 className="mb-4 fw-bold text-dark">
+          <i className="bi bi-plus-circle me-2"></i>
           {editId ? "Modifier le paiement" : "Ajouter un paiement"}
         </h5>
 
         <form onSubmit={handleAddOrEditPaiement} className="d-flex flex-wrap align-items-end gap-3">
-
           <div className="flex-grow-1">
             <label className="form-label">Numéro de facture</label>
             <input
               type="text"
-              name="facture"
-              value={formData.facture}
+              name="numeroFacture"
+              value={formData.numeroFacture}
               onChange={handleChange}
               className="form-control"
               placeholder="00001"
+              required
             />
           </div>
 
@@ -111,7 +115,7 @@ const Paiement = () => {
             <input
               type="date"
               name="datePaiement"
-              value={formData.datePaiement}
+              value={formData.datePaiement?.slice(0, 10) || ""}
               onChange={handleChange}
               className="form-control"
             />
@@ -125,7 +129,7 @@ const Paiement = () => {
               onChange={handleChange}
               className="form-select"
             >
-              <option value="">Choisir</option>
+        
               <option value="en ligne">En ligne</option>
               <option value="hors ligne">Hors ligne</option>
             </select>
@@ -140,21 +144,22 @@ const Paiement = () => {
               onChange={handleChange}
               className="form-control"
               placeholder="0"
+              required
             />
           </div>
 
-          <div className="d-flex flex-column justify-content-between" style={{ minWidth: "160px" }}>
+          <div className="d-flex flex-column justify-content-between" style={{ minWidth: "150px" }}>
             <label className="form-label">Statut</label>
             <div className="form-check form-switch mb-2">
               <input
                 className="form-check-input"
                 type="checkbox"
                 id="statutSwitch"
-                checked={formData.statut === "payé"}
+                checked={formData.statut}
                 onChange={handleStatutToggle}
               />
               <label className="form-check-label" htmlFor="statutSwitch">
-                {formData.statut === "payé" ? "Payé" : "Non payé"}
+                {formData.statut ? "Payé" : "Non payé"}
               </label>
             </div>
           </div>
@@ -166,6 +171,7 @@ const Paiement = () => {
                 type="submit"
                 className={`btn ${editId ? "btn-warning" : "btn-vert"} px-4`}
               >
+                <i className={`bi ${editId ? "bi-pencil-square" : "bi-plus-circle"} me-1`}></i>
                 {editId ? "Modifier" : "Ajouter"}
               </button>
               {editId && (
@@ -183,11 +189,11 @@ const Paiement = () => {
       </div>
 
       {/* Liste des paiements */}
-      <div
-        className="p-4 bg-white rounded shadow-sm"
-        style={{ maxWidth: "1200px" }} // Idem ici, pour rester cohérent
-      >
-        <h5 className="mb-3 fw-bold text-primary">Liste des paiements</h5>
+      <div className="p-4 bg-white rounded shadow-sm" style={{ maxWidth: "1200px", margin: "auto" }}>
+        <h5 className="mb-3 fw-bold text-dark">
+          <i className="bi bi-list-check me-2"></i>
+          Liste des paiements
+        </h5>
 
         <table className="table table-hover table-bordered align-middle">
           <thead className="table-light">
@@ -209,27 +215,22 @@ const Paiement = () => {
               </tr>
             ) : (
               paiements.map((p) => (
-                <tr key={p.id}>
-                  <td><i className="bi bi-receipt text-success me-1"></i> {p.facture}</td>
-                  <td>{p.datePaiement || "-"}</td>
+                <tr key={p._id}>
+                  <td><i className="bi bi-receipt text-success me-1"></i> {p.numeroFacture}</td>
+                  <td>{p.datePaiement ? new Date(p.datePaiement).toLocaleDateString() : "-"}</td>
                   <td>{p.typePaiement || "-"}</td>
                   <td>{p.montant} TND</td>
                   <td>
-                    <span className={`badge ${p.statut === "payé" ? "bg-success" : "bg-danger"}`}>
-                      {p.statut}
+                    <span className={`badge ${p.statut ? "bg-success" : "bg-danger"}`}>
+                      <i className={`bi ${p.statut ? "bi-check-circle-fill" : "bi-x-circle-fill"} me-1`}></i>
+                      {p.statut ? "Payé" : "Non payé"}
                     </span>
                   </td>
                   <td className="text-center">
-                    <button
-                      className="btn btn-sm btn-outline-primary me-2"
-                      onClick={() => handleEdit(p)}
-                    >
+                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(p)}>
                       <i className="bi bi-pencil"></i>
                     </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDelete(p.id)}
-                    >
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p._id)}>
                       <i className="bi bi-trash"></i>
                     </button>
                   </td>
