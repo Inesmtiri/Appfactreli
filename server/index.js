@@ -12,6 +12,8 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import produitRoutes from './routes/produitRoutes.js';
 import devisRoutes from './routes/devisRoutes.js'; // ✅ nouveau
 import factureRoutes from "./routes/factureRoutes.js";
+import emailRoutes from "./routes/emailRoutes.js";
+import depenseRoutes from"./routes/depenseRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -30,6 +32,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/produits', produitRoutes);
 app.use('/api/devis', devisRoutes); // ✅ ajout route devis
 app.use("/api/factures", factureRoutes);
+app.use("/api/depenses", depenseRoutes);
+app.use("/api/email", emailRoutes);
 const PORT = process.env.PORT || 3001;
 const MONGODB_URL = process.env.MONGODB_URL;
 

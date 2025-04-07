@@ -1,18 +1,32 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
+import axios from "axios";
 
-const SendFactureModal = ({ onClose, factureInfo }) => {
+const SendFacture = ({ onClose, factureInfo }) => {
   const [destinataire, setDestinataire] = useState("");
   const [objet, setObjet] = useState("Facture à payer");
   const [message, setMessage] = useState(
-    `[${factureInfo.nomEntreprise}] vous a envoyé une facture (N° ${factureInfo.numeroFacture}) pour ${factureInfo.total.toFixed(3)} TND, à payer avant le ${factureInfo.dueDate || "date d'échéance"}`
+    `[${factureInfo.nomEntreprise}] vous a envoyé une facture (N° ${factureInfo.numeroFacture}) pour ${factureInfo.total.toFixed(3)} TND.`
   );
   const [modePaiement, setModePaiement] = useState("Espèces");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Facture envoyée à ${destinataire} par ${modePaiement} !`);
-    onClose();
+
+    try {
+      const res = await axios.post("http://localhost:3001/api/email/send-facture", {
+        destinataire,
+        objet,
+        message,
+        modePaiement,
+      });
+
+      alert("📤 " + res.data.message);
+      onClose();
+    } catch (err) {
+      console.error("Erreur envoi email :", err.message);
+      alert("❌ Erreur lors de l'envoi de la facture.");
+    }
   };
 
   return (
@@ -58,7 +72,7 @@ const SendFactureModal = ({ onClose, factureInfo }) => {
             />
           </Form.Group>
 
-          {/* Mode de Paiement */}
+          {/* Champ Mode de Paiement */}
           <Form.Group className="mb-4">
             <Form.Label className="fw-semibold">Mode de paiement :</Form.Label>
             <Form.Select
@@ -73,7 +87,7 @@ const SendFactureModal = ({ onClose, factureInfo }) => {
             </Form.Select>
           </Form.Group>
 
-          {/* Boutons en bas */}
+          {/* Boutons */}
           <div className="d-flex justify-content-end gap-2">
             <Button variant="secondary" onClick={onClose}>
               Annuler
@@ -86,7 +100,7 @@ const SendFactureModal = ({ onClose, factureInfo }) => {
                 fontWeight: "bold",
               }}
             >
-              Créer
+              Envoyer
             </Button>
           </div>
         </Form>
@@ -95,4 +109,4 @@ const SendFactureModal = ({ onClose, factureInfo }) => {
   );
 };
 
-export default SendFactureModal;
+export default SendFacture;

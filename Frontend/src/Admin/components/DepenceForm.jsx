@@ -1,40 +1,44 @@
 import React, { useState } from "react";
 import { Form, Button, Card, Row, Col } from "react-bootstrap";
 import { FaFileUpload } from "react-icons/fa";
+import axios from "axios";
 
-const DepenseForm = ({ onSave, onCancel }) => {
+const DepenseForm = ({ onCancel }) => {
   const [categorie, setCategorie] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [commercant, setCommercant] = useState("");
   const [description, setDescription] = useState("");
-  const [clientProjet, setClientProjet] = useState("");
   const [montant, setMontant] = useState(0);
   const [image, setImage] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const depense = {
-      id: Date.now(),
       categorie,
       date,
       commercant,
       description,
-      clientProjet,
       montant: parseFloat(montant),
       image,
     };
 
-    onSave(depense);
-
-    // Reset fields après l'enregistrement
-    setCategorie("");
-    setDate(new Date().toISOString().slice(0, 10));
-    setCommercant("");
-    setDescription("");
-    setClientProjet("");
-    setMontant(0);
-    setImage(null);
+    try {
+      const res = await axios.post("/api/depenses", depense);
+      console.log("✅ Dépense enregistrée :", res.data);
+      alert("✅ Dépense enregistrée avec succès !");
+      // Réinitialiser les champs
+      setCategorie("");
+      setDate(new Date().toISOString().slice(0, 10));
+      setCommercant("");
+      setDescription("");
+      setMontant(0);
+      setImage(null);
+      onCancel(); // pour fermer le formulaire après enregistrement
+    } catch (error) {
+      console.error("❌ Erreur lors de l'enregistrement :", error);
+      alert("❌ Erreur lors de l'enregistrement de la dépense.");
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -91,16 +95,6 @@ const DepenseForm = ({ onSave, onCancel }) => {
             placeholder="Description de la dépense"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="clientProjet">
-          <Form.Label className="fw-semibold">Assigner à un client/projet</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Nom du client ou projet"
-            value={clientProjet}
-            onChange={(e) => setClientProjet(e.target.value)}
           />
         </Form.Group>
 
@@ -164,4 +158,3 @@ const DepenseForm = ({ onSave, onCancel }) => {
 };
 
 export default DepenseForm;
-

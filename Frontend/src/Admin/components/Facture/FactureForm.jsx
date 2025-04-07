@@ -105,7 +105,8 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
 
   const handleSave = () => {
     const facture = {
-      client: clientId,
+      typeClient,
+      client: typeClient === "interne" ? clientId : client,
       date,
       numeroFacture,
       reference,
@@ -120,50 +121,33 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
       nomEntreprise,
       telephone,
     };
+
     onAddFacture(facture);
     onCancel();
   };
 
   const handleSend = () => {
     if (typeClient === "interne") {
-      setShowSendModal(true);
-    } else {
       handleSave();
+    } else {
+      setShowSendModal(true);
     }
   };
 
   return (
     <>
-      <div
-        className="modal d-block"
-        style={{
-          backgroundColor: "rgba(0,0,0,0.5)",
-          overflowY: "auto",
-          paddingTop: "50px",
-          zIndex: 1050,
-        }}
-      >
+      <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", overflowY: "auto", paddingTop: "50px", zIndex: 1050 }}>
         <div className="modal-dialog modal-xl">
           <div className="modal-content p-4">
             <div className="modal-body">
               <div className="row">
-                {/* Partie gauche */}
                 <div className="col-md-8" ref={printRef}>
                   <h4 className="fst-italic mb-4">Nouvelle facture</h4>
 
+                  {/* Logo + infos entreprise */}
                   <div className="d-flex gap-3 mb-3">
                     <div
-                      style={{
-                        border: "2px dashed #ccc",
-                        width: "150px",
-                        height: "120px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        cursor: "pointer",
-                      }}
+                      style={{ border: "2px dashed #ccc", width: "150px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: "8px", overflow: "hidden", cursor: "pointer" }}
                       onClick={() => document.getElementById("logoInput").click()}
                     >
                       {logo ? (
@@ -175,7 +159,6 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
                       )}
                       <input type="file" id="logoInput" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
                     </div>
-
                     <div className="flex-grow-1">
                       <input type="text" className="form-control mb-2" placeholder="Entreprise" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
                       <input type="text" className="form-control" placeholder="Téléphone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
@@ -195,8 +178,8 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
                     </div>
                   </div>
 
-                  {/* Sélection client interne */}
-                  {typeClient === "interne" && (
+                  {/* Client interne ou externe */}
+                  {typeClient === "interne" ? (
                     <div className="mb-3">
                       <label className="fw-semibold">Client interne</label>
                       <select className="form-select" value={clientId} onChange={(e) => {
@@ -213,9 +196,20 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
                         ))}
                       </select>
                     </div>
+                  ) : (
+                    <div className="mb-3">
+                      <label className="fw-semibold">Client externe</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Nom du client"
+                        value={client}
+                        onChange={(e) => setClient(e.target.value)}
+                      />
+                    </div>
                   )}
 
-                  {/* Info facture */}
+                  {/* Infos facture */}
                   <div className="row mb-3">
                     <div className="col-md-4">
                       <label>Date</label>
@@ -231,7 +225,7 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
                     </div>
                   </div>
 
-                  {/* Table des lignes */}
+                  {/* Table lignes */}
                   <div className="table-responsive mb-3">
                     <table className="table table-bordered">
                       <thead className="table-light">
@@ -298,7 +292,7 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
                   </div>
                 </div>
 
-                {/* Boutons */}
+                {/* Boutons actions */}
                 <div className="col-md-4 d-flex flex-column justify-content-center align-items-start gap-3">
                   <button className="btn w-75 fw-bold" style={{ backgroundColor: "#23BD15", borderColor: "#23BD15", color: "#fff" }} onClick={handleSend}>Envoyer</button>
                   <button className="btn w-75 fw-bold" style={{ backgroundColor: "#23BD15", borderColor: "#23BD15", color: "#fff" }} onClick={handleSave}>Enregistrer</button>
@@ -315,7 +309,7 @@ const FactureForm = ({ onAddFacture, onCancel }) => {
         <SendFacture
           onClose={() => setShowSendModal(false)}
           factureInfo={{
-            client: clientId,
+            client,
             numeroFacture,
             total,
             nomEntreprise,
