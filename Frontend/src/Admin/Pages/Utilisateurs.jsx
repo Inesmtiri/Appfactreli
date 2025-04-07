@@ -12,7 +12,6 @@ const Utilisateurs = () => {
   });
   const [editIndex, setEditIndex] = useState(null);
 
-  // 🔁 Récupérer la liste des utilisateurs
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -26,13 +25,11 @@ const Utilisateurs = () => {
     }
   };
 
-  // ✏️ Modifier les champs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // ➕ Ajouter ou modifier un utilisateur
   const handleAddOrEditUser = async (e) => {
     e.preventDefault();
 
@@ -57,7 +54,6 @@ const Utilisateurs = () => {
     }
   };
 
-  // 🗑️ Supprimer un utilisateur
   const handleDeleteUser = async (index) => {
     const confirmDelete = window.confirm("Êtes-vous sûr ?");
     if (!confirmDelete) return;
@@ -71,20 +67,20 @@ const Utilisateurs = () => {
     }
   };
 
-  // 🖊️ Pré-remplir le formulaire pour modification
   const handleEditUser = (index) => {
     setFormData(users[index]);
     setEditIndex(index);
   };
 
   return (
-    <div style={{ marginLeft: "250px", padding: "20px" }}>
-      {/* Formulaire */}
-      <div className="card mb-4 mx-auto" style={{ maxWidth: "1000px" }}>
+    <div className="mt-4" style={{ padding: "20px", marginLeft: "250px" }}>
+      <div className="card mb-4 shadow-sm mx-auto" style={{ maxWidth: "1150px" }}>
         <div className="card-body">
-          <h5 className="card-title mb-3">
-            {editIndex !== null ? "Modifier un utilisateur" : "Ajouter un utilisateur"}
-          </h5>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="card-title fw-semibold">
+              {editIndex !== null ? "✏️ Modifier un utilisateur" : "➕ Ajouter un utilisateur"}
+            </h5>
+          </div>
 
           <form onSubmit={handleAddOrEditUser}>
             <div className="row g-2 align-items-end">
@@ -101,7 +97,11 @@ const Utilisateurs = () => {
                 <input name="poste" value={formData.poste} onChange={handleChange} className="form-control" placeholder="Poste" />
               </div>
               <div className="col-auto">
-                <button type="submit" className={`btn ${editIndex !== null ? "btn-warning" : "btn-vert"} w-100`}>
+                <button
+                  type="submit"
+                  className={`btn w-100 fw-bold text-white`}
+                  style={{ backgroundColor: "#00cc44", boxShadow: "0px 2px 6px rgba(0,0,0,0.15)" }}
+                >
                   <i className={`bi ${editIndex !== null ? "bi-pencil-square" : "bi-plus-circle"} me-1`}></i>
                   {editIndex !== null ? "Modifier" : "Ajouter"}
                 </button>
@@ -111,13 +111,14 @@ const Utilisateurs = () => {
         </div>
       </div>
 
-      {/* Liste */}
-      <div className="card mx-auto" style={{ maxWidth: "1000px" }}>
+      <div className="card mx-auto shadow-sm" style={{ maxWidth: "1150px" }}>
         <div className="card-body">
-          <h5 className="card-title mb-3">Tous les utilisateurs</h5>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="card-title fw-semibold">📋 Liste des utilisateurs</h5>
+          </div>
           <div className="table-responsive">
-            <table className="table table-striped table-hover align-middle">
-              <thead>
+            <table className="table table-striped table-hover align-middle" style={{ fontSize: "15px" }}>
+              <thead className="table-light">
                 <tr>
                   <th>Nom</th>
                   <th>Prénom</th>

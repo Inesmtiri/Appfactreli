@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Form } from "react-bootstrap";
 import axios from "axios";
 
@@ -13,7 +13,6 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
     motDePasse: ""
   });
 
-  // Préremplir si c’est en mode édition
   useEffect(() => {
     if (clientToEdit) {
       setFormClient(clientToEdit);
@@ -21,7 +20,7 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
   }, [clientToEdit]);
 
   const generatePassword = () => {
-    return Math.random().toString(36).slice(-8);
+    return Math.random().toString(36).slice(-8); // 🔐 8 caractères aléatoires
   };
 
   const handleChange = (e) => {
@@ -39,36 +38,33 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
 
     try {
       if (clientToEdit) {
-        // ✏️ MODE MODIFICATION
+        // 🔁 Mise à jour
         await axios.put(`http://localhost:3001/api/clients/${formClient._id}`, formClient);
         if (onUpdateClient) onUpdateClient(formClient);
         alert("✅ Client modifié avec succès !");
       } else {
-        // ➕ MODE CRÉATION
+        // ➕ Création avec mot de passe généré
         const motDePasseGenere = generatePassword();
         const clientData = { ...formClient, motDePasse: motDePasseGenere };
 
         const response = await axios.post("http://localhost:3001/api/clients", clientData);
-
-        // Email désactivé pour l’instant
-        /*
-        await axios.post("http://localhost:3001/api/clients/send-password", {
-          email: clientData.email,
-          motDePasse: clientData.motDePasse,
-        });
-        */
-
-        alert("✅ Client créé avec succès !");
         if (onAddClient) onAddClient(response.data);
+
+        // 🛡️ Affichage simple du mot de passe
+        alert(`✅ Client créé avec succès !\n\n🛡️ Mot de passe généré : ${motDePasseGenere}`);
       }
 
-      // Réinitialiser et fermer
       setFormClient({
-        nom: "", prenom: "", societe: "", telephone: "",
-        email: "", adresse: "", motDePasse: ""
+        nom: "",
+        prenom: "",
+        societe: "",
+        telephone: "",
+        email: "",
+        adresse: "",
+        motDePasse: ""
       });
-      if (onCancel) onCancel();
 
+      if (onCancel) onCancel();
     } catch (error) {
       if (error.response && error.response.status === 409) {
         alert("⚠️ Un client avec cet email existe déjà !");

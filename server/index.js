@@ -7,6 +7,7 @@ import aboutRoutes from './routes/aboutRoutes.js';
 import projetRoutes from './routes/projetRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import utilisateurRoutes from './routes/utilisateurRoutes.js';
+import paiementRoutes from './routes/paiementRoutes.js'; // ✅ Nouvelle ligne ajoutée
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/api/about', aboutRoutes);
 app.use('/api/utilisateur', utilisateurRoutes);
 app.use('/api/projets', projetRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/paiements', paiementRoutes); // ✅ Route Paiement ajoutée ici
 
 const PORT = process.env.PORT || 3001;
 const MONGODB_URL = process.env.MONGODB_URL;
