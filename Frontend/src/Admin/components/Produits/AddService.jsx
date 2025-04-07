@@ -1,66 +1,84 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
+import axios from "axios";
 
-const AddService = ({ show, onHide, onSave }) => {
-  const [service, setService] = useState({
+const AddService = ({ show, onHide, onSave, service = null }) => {
+  const [serviceState, setServiceState] = useState({
     nom: "",
     description: "",
     tarif: ""
   });
 
+  // ⚙️ Mettre à jour le formulaire si on édite un service
+  useEffect(() => {
+    if (service) {
+      setServiceState(service);
+    } else {
+      setServiceState({
+        nom: "",
+        description: "",
+        tarif: ""
+      });
+    }
+  }, [service]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setService({
-      ...service,
+    setServiceState({
+      ...serviceState,
       [name]: value
     });
   };
 
-  const handleSave = () => {
-    if (!service.nom) {
+  const handleSave = async () => {
+    if (!serviceState.nom) {
       alert("Le nom est requis !");
       return;
     }
 
-    const newService = {
-      ...service,
-      id: Date.now()
-    };
+    try {
+      let response;
+      if (service && service._id) {
+        // 🔁 Si service existe => modifier
+        response = await axios.put(`http://localhost:3001/api/services/${service._id}`, serviceState);
+      } else {
+        // ➕ Sinon => créer
+        response = await axios.post("http://localhost:3001/api/services", serviceState);
+      }
 
-    onSave(newService);
-    onHide();
-    setService({
-      nom: "",
-      description: "",
-      tarif: ""
-    });
+      if (onSave) onSave(response.data);
+      onHide();
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement du service :", error);
+      alert("Une erreur est survenue.");
+    }
   };
 
   return (
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>
-          <span className="fw-normal fst-italic">• nouveau service :</span>
+          <span className="fw-normal fst-italic">
+            {service ? "Modifier le service :" : "Nouveau service :"}
+          </span>
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
         <Form>
-          {/* Nom */}
           <Form.Group as={Row} className="mb-3 align-items-center">
             <Form.Label column sm={3}>Nom :</Form.Label>
             <Col sm={9}>
               <Form.Control
                 type="text"
                 name="nom"
-                value={service.nom}
+                value={serviceState.nom}
                 onChange={handleChange}
                 placeholder="Nom du service"
               />
             </Col>
           </Form.Group>
 
-          {/* Description */}
           <Form.Group as={Row} className="mb-3 align-items-center">
             <Form.Label column sm={3}>Description :</Form.Label>
             <Col sm={9}>
@@ -68,21 +86,20 @@ const AddService = ({ show, onHide, onSave }) => {
                 as="textarea"
                 rows={4}
                 name="description"
-                value={service.description}
+                value={serviceState.description}
                 onChange={handleChange}
                 placeholder="Description du service"
               />
             </Col>
           </Form.Group>
 
-          {/* Tarif */}
           <Form.Group as={Row} className="mb-3 align-items-center">
             <Form.Label column sm={3}>Tarif :</Form.Label>
             <Col sm={9}>
               <Form.Control
                 type="number"
                 name="tarif"
-                value={service.tarif}
+                value={serviceState.tarif}
                 onChange={handleChange}
                 placeholder="Tarif en TND"
               />
@@ -100,7 +117,7 @@ const AddService = ({ show, onHide, onSave }) => {
           }}
           onClick={handleSave}
         >
-          Créer
+          {service ? "Modifier" : "Créer"}
         </Button>
 
         <Button

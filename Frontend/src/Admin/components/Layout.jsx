@@ -21,26 +21,41 @@ const Layout = () => {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", backgroundColor: "#fff" }}>
-      {/* Sidebar */}
-      <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+    <div style={{ backgroundColor: "#fff" }}>
+      {/* Sidebar positionnée en fixed à gauche */}
+      <Sidebar
+        activeModule={activeModule}
+        setActiveModule={setActiveModule}
+      />
 
-      {/* Main content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <Navbar activeModule={activeModule} onLogout={() => setShowLogout(true)} />
+      {/* Contenu principal avec une marge à gauche pour ne pas passer sous la sidebar */}
+      <div
+        style={{
+          marginLeft: "230px", // même largeur que la sidebar
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+        }}
+      >
+        <Navbar
+          activeModule={activeModule}
+          onLogout={() => setShowLogout(true)}
+        />
 
-        <div style={{ flex: 1, padding: "20px", marginTop: "60px", backgroundColor: "#fff" }}>
+        <div
+          style={{
+            flex: 1,
+            padding: "20px",
+            marginTop: "60px", // hauteur de la navbar si elle est fixe
+            backgroundColor: "#fff",
+          }}
+        >
           <Outlet />
         </div>
       </div>
 
-      {/* Modal logout sans bouton de fermeture */}
-      <Modal
-        show={showLogout}
-        backdrop="static"
-        keyboard={false}
-        centered
-      >
+      {/* Modal de confirmation logout */}
+      <Modal show={showLogout} backdrop="static" keyboard={false} centered>
         <Modal.Header>
           <Modal.Title>Déconnexion</Modal.Title>
         </Modal.Header>

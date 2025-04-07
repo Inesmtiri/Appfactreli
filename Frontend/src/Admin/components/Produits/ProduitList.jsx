@@ -1,9 +1,21 @@
-
 import React from "react";
 import { Card, Button } from "react-bootstrap";
 import { FaTrash, FaBox } from "react-icons/fa";
+import axios from "axios";
 
 const ProduitList = ({ produits, onDelete }) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) return;
+
+    try {
+      await axios.delete(`http://localhost:3001/api/produits/${id}`);
+      onDelete(id); // callback pour mettre à jour le state côté parent
+    } catch (error) {
+      console.error("❌ Erreur lors de la suppression :", error);
+      alert("Erreur lors de la suppression du produit.");
+    }
+  };
+
   return (
     <Card className="shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
       <h5 className="mb-3 fst-italic">• Mes produits :</h5>
@@ -16,20 +28,16 @@ const ProduitList = ({ produits, onDelete }) => {
         <div className="d-flex flex-column gap-3">
           {produits.map((produit) => (
             <div
-              key={produit.id}
+              key={produit._id || produit.id} // gère _id (Mongo) ou id local
               className="d-flex justify-content-between align-items-center border rounded p-3 bg-light"
             >
               {/* Partie gauche */}
               <div className="d-flex align-items-center gap-3">
                 <FaBox size={20} color="#23BD15" />
-
                 <div>
-                  {/* Référence du produit */}
                   <div className="fw-bold">
                     {produit.reference || "Sans référence"}
                   </div>
-
-                  {/* Catégorie */}
                   <div className="text-muted small">
                     Catégorie : {produit.categorie || "Non spécifiée"}
                   </div>
@@ -38,7 +46,6 @@ const ProduitList = ({ produits, onDelete }) => {
 
               {/* Partie droite */}
               <div className="d-flex align-items-center gap-3">
-                {/* Statut */}
                 <span
                   className="badge"
                   style={{
@@ -54,11 +61,10 @@ const ProduitList = ({ produits, onDelete }) => {
                   {produit.statut === "rupture" ? "Rupture" : "En stock"}
                 </span>
 
-                {/* Bouton supprimer */}
                 <Button
                   variant="link"
                   className="text-dark p-0"
-                  onClick={() => onDelete(produit.id)}
+                  onClick={() => handleDelete(produit._id || produit.id)}
                   title="Supprimer ce produit"
                 >
                   <FaTrash size={18} />
@@ -73,5 +79,3 @@ const ProduitList = ({ produits, onDelete }) => {
 };
 
 export default ProduitList;
-
-

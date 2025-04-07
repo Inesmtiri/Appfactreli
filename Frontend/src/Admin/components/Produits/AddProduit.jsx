@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
+import axios from "axios";
 
-const AddProduit = ({ show, onHide, onSave }) => {
+const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
   const [produit, setProduit] = useState({
     reference: "",
     categorie: "",
-    unite: "",
     enAchat: false,
     enVente: false,
     prixVente: "",
@@ -13,6 +13,25 @@ const AddProduit = ({ show, onHide, onSave }) => {
     stockMin: "",
     stockActuel: "",
   });
+
+  useEffect(() => {
+    if (produitToEdit) {
+      // préremplir le formulaire sans ID (car on veut créer un nouveau produit)
+      const { _id, ...rest } = produitToEdit;
+      setProduit(rest);
+    } else {
+      setProduit({
+        reference: "",
+        categorie: "",
+        enAchat: false,
+        enVente: false,
+        prixVente: "",
+        prixAchat: "",
+        stockMin: "",
+        stockActuel: "",
+      });
+    }
+  }, [produitToEdit]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,7 +41,7 @@ const AddProduit = ({ show, onHide, onSave }) => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!produit.reference || !produit.categorie) {
       alert("La référence et la catégorie sont obligatoires !");
       return;
@@ -31,26 +50,19 @@ const AddProduit = ({ show, onHide, onSave }) => {
     const stockActuel = parseInt(produit.stockActuel, 10);
     const statut = stockActuel === 0 ? "rupture" : "en stock";
 
-    const newProduit = {
+    const nouveauProduit = {
       ...produit,
-      id: Date.now(),
       stockActuel,
       statut,
     };
 
-    onSave(newProduit);
-
-    setProduit({
-      reference: "",
-      categorie: "",
-      unite: "",
-      enAchat: false,
-      enVente: false,
-      prixVente: "",
-      prixAchat: "",
-      stockMin: "",
-      stockActuel: "",
-    });
+    try {
+      const response = await axios.post("http://localhost:3001/api/produits", nouveauProduit);
+      onSave(response.data);
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement du produit:", error);
+      alert("Erreur lors de l'enregistrement du produit.");
+    }
 
     onHide();
   };
@@ -59,7 +71,9 @@ const AddProduit = ({ show, onHide, onSave }) => {
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>
-          <span className="fw-normal fst-italic">• nouveau produit :</span>
+          <span className="fw-normal fst-italic">
+            {produitToEdit ? "Modifier le produit :" : "Nouveau produit :"}
+          </span>
         </Modal.Title>
       </Modal.Header>
 
@@ -87,19 +101,6 @@ const AddProduit = ({ show, onHide, onSave }) => {
                 value={produit.categorie}
                 onChange={handleChange}
                 placeholder="Catégorie"
-              />
-            </Col>
-          </Form.Group>
-
-          <Form.Group as={Row} className="mb-3">
-            <Form.Label column sm={4}>Unité :</Form.Label>
-            <Col sm={8}>
-              <Form.Control
-                type="text"
-                name="unite"
-                value={produit.unite}
-                onChange={handleChange}
-                placeholder="Unité"
               />
             </Col>
           </Form.Group>
@@ -185,7 +186,7 @@ const AddProduit = ({ show, onHide, onSave }) => {
           style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
           onClick={handleSave}
         >
-          Créer
+          {produitToEdit ? "Enregistrer comme nouveau" : "Créer"}
         </Button>
         <Button
           style={{ backgroundColor: "#5B9BD5", borderColor: "#5B9BD5" }}

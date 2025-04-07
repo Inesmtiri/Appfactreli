@@ -18,20 +18,28 @@ import Produits from './Admin/Pages/Produits';
 import Paiement from './Admin/Pages/Paiement';
 import Utilisateurs from './Admin/Pages/Utilisateurs';
 
-// ✅ Layout global
+// ✅ Layout global admin
 import Layout from './Admin/components/Layout';
+
+// ✅ Interface CLIENT
+import LayoutClient from './Clients/Components/LayoutClient';
+import DashboardClient from './Clients/Pages/DashboardClient';
+import MesDevis from './Clients/Pages/MesDevis';
+import MesFacture from './Clients/Pages/MesFacture';
+import FactureDetails from './Clients/Components/FactureDetails'; // ✅ ajouté
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Pages publiques */}
+
+        {/* ✅ Pages publiques */}
         <Route index element={<WelcomePage />} />
         <Route path="inscription" element={<Inscription />} />
         <Route path="login" element={<Connexion />} />
         <Route path="about" element={<About />} />
 
-        {/* Pages internes */}
+        {/* ✅ Interface ADMIN */}
         <Route element={<Layout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="client" element={<Client />} />
@@ -43,9 +51,19 @@ function App() {
           <Route path="projets" element={<Projets />} />
           <Route path="paiement" element={<Paiement />} />
         </Route>
+
+        {/* ✅ Interface CLIENT */}
+        <Route element={<LayoutClient />}>
+          <Route path="client/dashboard" element={<DashboardClient />} />
+          <Route path="client/mes-devis" element={<MesDevis />} />
+          <Route path="client/mes-factures" element={<MesFacture />} />
+          <Route path="client/facture/:id" element={<FactureDetails />} /> {/* ✅ détail */}
+        </Route>
+
       </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+
