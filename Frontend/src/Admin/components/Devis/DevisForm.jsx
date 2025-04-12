@@ -1,92 +1,93 @@
-import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
-import { Button, Modal, Form, Table, Row, Col } from "react-bootstrap";
+import React, { useEffect, useState, useRef } from "react";
 import { FaTrash } from "react-icons/fa";
-import SendDevisModal from "./SendDevis";
+import axios from "axios";
 
 const DevisForm = ({ onAddDevis, onCancel, editData }) => {
-  const [clientType, setClientType] = useState(editData?.clientType || "interne");
-  const [clientId, setClientId] = useState(editData?.clientId || "");
   const [clients, setClients] = useState([]);
-  const [articles, setArticles] = useState([]);
-  const [client, setClient] = useState(editData?.client || "");
+  const [produits, setProduits] = useState([]);
+  const [services, setServices] = useState([]);
+
+  const [clientId, setClientId] = useState(editData?.clientId || "");
+  const [clientName, setClientName] = useState(editData?.client || "");
+  const [nomEntreprise, setNomEntreprise] = useState(editData?.nomEntreprise || "");
+  const [telephone, setTelephone] = useState(editData?.telephone || "");
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
   const [numeroDevis, setNumeroDevis] = useState(editData?.numeroDevis || "000001");
   const [reference, setReference] = useState(editData?.reference || "");
-  const [nomEntreprise, setNomEntreprise] = useState(editData?.nomEntreprise || "");
-  const [telephone, setTelephone] = useState(editData?.telephone || "");
-  const [lignes, setLignes] = useState(editData?.lignes || [
-    { id: "", description: "", quantite: 1, prixUnitaire: 0 }
-  ]);
   const [logo, setLogo] = useState(null);
-  const [showSendModal, setShowSendModal] = useState(false);
+
+  const [lignes, setLignes] = useState(
+    editData?.lignes?.map((l) => ({
+      itemId: l.itemId || "",
+      type: l.type || "",
+      quantite: l.quantite || 1,
+      prixUnitaire: l.prixUnitaire || 0,
+      designation: l.designation || "",
+    })) || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
+  );
+
   const printRef = useRef();
 
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const res = await axios.get("http://localhost:3001/api/clients");
-        setClients(res.data);
-      } catch (err) {
-        console.error("Erreur récupération clients :", err.message);
-      }
-    };
-    fetchClients();
+    axios.get("/api/clients").then(res => setClients(res.data));
+    axios.get("/api/produits").then(res => setProduits(res.data));
+    axios.get("/api/services").then(res => setServices(res.data));
   }, []);
 
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const produits = await axios.get("http://localhost:3001/api/produits");
-        const services = await axios.get("http://localhost:3001/api/services");
-        const all = [
-          ...produits.data.map(p => ({ _id: p._id, type: "Produit", nom: p.reference, prix: p.prixVente })),
-          ...services.data.map(s => ({ _id: s._id, type: "Service", nom: s.nom, prix: s.tarif }))
-        ];
-        setArticles(all);
-      } catch (err) {
-        console.error("❌ Erreur chargement produits/services :", err.message);
-      }
-    };
-    fetchArticles();
-  }, []);
-
-  const ajouterLigne = () => {
-    setLignes([...lignes, { id: "", description: "", quantite: 1, prixUnitaire: 0 }]);
-  };
-
-  const supprimerLigne = (index) => {
-    setLignes(lignes.filter((_, i) => i !== index));
-  };
-
-  const updateLigne = (index, field, value) => {
-    const updated = [...lignes];
-    if (field === "quantite") {
-      updated[index][field] = parseInt(value);
-    } else {
-      updated[index][field] = value;
+    if (clientId) {
+      const selected = clients.find((c) => c._id === clientId);
+      if (selected) setClientName(`${selected.nom} ${selected.prenom}`);
     }
+  }, [clientId, clients]);
+
+  const options = [
+    ...produits.map((p) => ({ _id: p._id, type: "produit", nom: p.reference, prix: p.prixVente || 0 })),
+    ...services.map((s) => ({ _id: s._id, type: "service", nom: s.nom, prix: s.tarif || 0 })),
+  ];
+
+  const handleSelectItem = (index, value) => {
+    const [type, id] = value.split("-");
+    const selected = options.find((item) => item._id === id && item.type === type);
+    const updated = [...lignes];
+    updated[index] = {
+      ...updated[index],
+      itemId: id,
+      type,
+      prixUnitaire: selected?.prix || 0,
+      designation: selected?.nom || "",
+    };
     setLignes(updated);
   };
 
-  const subtotal = lignes.reduce((total, ligne) => total + ligne.quantite * ligne.prixUnitaire, 0);
+  const handleChange = (index, field, value) => {
+    const updated = [...lignes];
+    updated[index][field] = field === "designation" ? value : parseFloat(value) || 0;
+    setLignes(updated);
+  };
+
+  const ajouterLigne = () => {
+    setLignes([...lignes, { itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]);
+  };
+
+  const supprimerLigne = (index) => {
+    const updated = [...lignes];
+    updated.splice(index, 1);
+    setLignes(updated);
+  };
+
+  const subtotal = lignes.reduce((sum, l) => sum + l.quantite * l.prixUnitaire, 0);
   const tax = subtotal * 0.19;
   const total = subtotal + tax;
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setLogo(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleSave = async () => {
+    if (!clientId) return alert("Veuillez sélectionner un client.");
 
-  const handleSaveDevis = async () => {
     const devis = {
-      clientType,
-      client,
       clientId,
+      client: clientName,
+      nomEntreprise,
+      telephone,
       date,
       numeroDevis,
       reference,
@@ -94,233 +95,120 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
       subtotal,
       tax,
       total,
-      nomEntreprise,
-      telephone,
-      statut: "en attente"
+      statut: "en attente",
     };
 
     try {
       if (editData?._id) {
-        const res = await axios.put(`http://localhost:3001/api/devis/${editData._id}`, devis);
+        const res = await axios.put(`/api/devis/${editData._id}`, devis);
         onAddDevis(res.data);
       } else {
-        const res = await axios.post("http://localhost:3001/api/devis", devis);
+        const res = await axios.post("/api/devis", devis);
         onAddDevis(res.data);
       }
       onCancel();
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement du devis :", error.message);
+    } catch (err) {
+      console.error("Erreur enregistrement devis :", err.message);
+      alert("Erreur lors de l'enregistrement du devis");
     }
-  };
-
-  const handleSend = () => {
-    if (clientType === "interne") {
-      if (!clientId) return alert("Veuillez sélectionner un client interne !");
-      console.log("Envoi au client interne ID:", clientId);
-    } else {
-      if (!client) return alert("Veuillez saisir un nom de client externe !");
-      setShowSendModal(true);
-    }
-  };
-
-  const handlePrint = () => {
-    const printContents = printRef.current.innerHTML;
-    const win = window.open("", "", "width=800,height=600");
-    win.document.write(`<html><head><title>Impression Devis</title></head><body>${printContents}</body></html>`);
-    win.document.close();
-    win.print();
   };
 
   return (
-    <>
-      <Modal show={true} onHide={onCancel} size="xl" backdrop="static" centered scrollable>
-        <Modal.Body className="p-4" style={{ backgroundColor: "#f8f9fa" }}>
-          <Row>
-            <Col md={8} ref={printRef}>
-              <h4 className="fst-italic mb-4">Nouveau devis</h4>
-              <Row className="mb-4">
-                <Col md={6}>
-                  <div className="border border-2 border-secondary rounded d-flex justify-content-center align-items-center"
-                    style={{ width: "200px", height: "150px", cursor: "pointer", position: "relative" }}
-                    onClick={() => document.getElementById("logoInput").click()}>
-                    {logo ? (
-                      <img src={logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                    ) : (
-                      <span className="text-muted text-center">Drag logo here<br />or select a file</span>
-                    )}
-                    <Form.Control type="file" id="logoInput" accept="image/*" onChange={handleLogoUpload}
-                      style={{ position: "absolute", width: "100%", height: "100%", opacity: 0 }} />
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <Form.Control className="mb-2 fw-bold" type="text" value={nomEntreprise}
-                    onChange={(e) => setNomEntreprise(e.target.value)} placeholder="Entreprise" />
-                  <Form.Control type="text" value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)} placeholder="+216 -- --- ---" />
-                </Col>
-              </Row>
+    <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingTop: "50px" }}>
+      <div className="modal-dialog modal-xl">
+        <div className="modal-content p-4">
+          <div className="modal-body">
+            <div className="row">
+              <div className="col-md-8" ref={printRef}>
+                <h4 className="fst-italic mb-4">Nouveau devis</h4>
 
-              {/* Type de client */}
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold">Type de client</Form.Label>
-                <div>
-                  <Form.Check inline label="Interne" name="clientType" type="radio"
-                    checked={clientType === "interne"} onChange={() => setClientType("interne")} />
-                  <Form.Check inline label="Externe" name="clientType" type="radio"
-                    checked={clientType === "externe"}
-                    onChange={() => {
-                      setClientType("externe");
-                      setClientId("");
-                      setClient("");
-                    }} />
-                </div>
-              </Form.Group>
-
-              {/* Sélection ou saisie client */}
-              {clientType === "interne" ? (
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Client interne</Form.Label>
-                  <Form.Select value={clientId} onChange={(e) => {
-                    const id = e.target.value;
-                    setClientId(id);
-                    const selected = clients.find(c => c._id === id);
-                    setClient(selected?.nom || "");
-                  }}>
+                {/* Client */}
+                <div className="mb-3">
+                  <label className="fw-semibold">Client</label>
+                  <select className="form-select" value={clientId} onChange={(e) => setClientId(e.target.value)}>
                     <option value="">-- Sélectionner un client --</option>
-                    {clients.map(c => (
+                    {clients.map((c) => (
                       <option key={c._id} value={c._id}>
                         {c.nom} {c.prenom} - {c.societe}
                       </option>
                     ))}
-                  </Form.Select>
-                </Form.Group>
-              ) : (
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Nom du client externe</Form.Label>
-                  <Form.Control type="text" value={client} placeholder="Nom du client"
-                    onChange={(e) => setClient(e.target.value)} />
-                </Form.Group>
-              )}
+                  </select>
+                </div>
 
-              {/* Informations devis */}
-              <Row className="mb-3">
-                <Col md={4}>
-                  <Form.Label className="fw-semibold">Date</Form.Label>
-                  <Form.Control type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                </Col>
-                <Col md={4}>
-                  <Form.Label className="fw-semibold">Numéro</Form.Label>
-                  <Form.Control type="text" value={numeroDevis} onChange={(e) => setNumeroDevis(e.target.value)} />
-                </Col>
-                <Col md={4}>
-                  <Form.Label className="fw-semibold">Référence</Form.Label>
-                  <Form.Control type="text" value={reference} onChange={(e) => setReference(e.target.value)} />
-                </Col>
-              </Row>
+                {/* Infos entreprise */}
+                <input className="form-control mb-2" placeholder="Entreprise" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
+                <input className="form-control mb-3" placeholder="Téléphone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
 
-              {/* Lignes produits/services */}
-              <Table bordered responsive>
-                <thead className="table-light">
-                  <tr>
-                    <th>Produit / Service</th>
-                    <th>Quantité</th>
-                    <th>Prix Unitaire</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lignes.map((ligne, index) => (
-                    <tr key={index}>
-                      <td>
-                        <Form.Select
-                          value={ligne.id}
-                          onChange={(e) => {
-                            const selected = articles.find(a => a._id === e.target.value);
-                            const prix = parseFloat(selected?.prix || 0);
-                            const updated = [...lignes];
-                            updated[index] = {
-                              id: selected?._id || "",
-                              description: selected?.nom || "",
-                              quantite: 1,
-                              prixUnitaire: prix
-                            };
-                            setLignes(updated);
-                          }}
-                        >
-                          <option value="">-- Choisir --</option>
-                          {articles.map(item => (
-                            <option key={item._id} value={item._id}>
-                              [{item.type}] {item.nom} - {item.prix} TND
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          min="1"
-                          value={ligne.quantite}
-                          onChange={(e) => updateLigne(index, "quantite", e.target.value)}
-                        />
-                      </td>
-                      <td>
-                      <Form.Control
-  type="number"
-  value={ligne.prixUnitaire || 0} 
-  readOnly
-/>
+                {/* Infos devis */}
+                <div className="row mb-3">
+                  <div className="col">
+                    <label>Date</label>
+                    <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
+                  </div>
+                  <div className="col">
+                    <label>Numéro</label>
+                    <input type="text" className="form-control" value={numeroDevis} onChange={(e) => setNumeroDevis(e.target.value)} />
+                  </div>
+                  <div className="col">
+                    <label>Référence</label>
+                    <input type="text" className="form-control" value={reference} onChange={(e) => setReference(e.target.value)} />
+                  </div>
+                </div>
 
-                      </td>
-                      <td className="text-center">
-                        <Button variant="link" className="p-0" onClick={() => supprimerLigne(index)}>
-                          <FaTrash size={18} />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+                {/* Lignes */}
+                <div className="table-responsive mb-3">
+                  <table className="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Produit / Service</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lignes.map((ligne, index) => (
+                        <tr key={index}>
+                          <td>
+                            <select className="form-select" value={ligne.type && ligne.itemId ? `${ligne.type}-${ligne.itemId}` : ""} onChange={(e) => handleSelectItem(index, e.target.value)}>
+                              <option value="">-- Choisir --</option>
+                              {options.map((item) => (
+                                <option key={item._id} value={`${item.type}-${item._id}`}>
+                                  [{item.type}] {item.nom} - {item.prix.toFixed(3)} TND
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td><input type="number" className="form-control" value={ligne.quantite} onChange={(e) => handleChange(index, "quantite", e.target.value)} /></td>
+                          <td><input type="number" className="form-control" value={ligne.prixUnitaire} onChange={(e) => handleChange(index, "prixUnitaire", e.target.value)} /></td>
+                          <td>{(ligne.quantite * ligne.prixUnitaire).toFixed(3)} TND</td>
+                          <td><button className="btn btn-link text-danger" onClick={() => supprimerLigne(index)}><FaTrash /></button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button className="btn btn-outline-primary" onClick={ajouterLigne}>+ Ajouter une ligne</button>
+                </div>
 
-              <Button variant="outline-primary" className="mb-3" onClick={ajouterLigne}>
-                + Ajouter une ligne
-              </Button>
-
-              {/* Totaux */}
-              <div className="text-end">
-                <p><strong>Subtotal :</strong> {subtotal.toFixed(3)} TND</p>
-                <p><strong>Tax (19%) :</strong> {tax.toFixed(3)} TND</p>
-                <h5><strong>Total :</strong> {total.toFixed(3)} TND</h5>
+                {/* Totaux */}
+                <div className="text-end">
+                  <p><strong>Subtotal:</strong> {subtotal.toFixed(3)} TND</p>
+                  <p><strong>Tax (19%):</strong> {tax.toFixed(3)} TND</p>
+                  <h5><strong>Total:</strong> {total.toFixed(3)} TND</h5>
+                </div>
               </div>
-            </Col>
 
-            {/* Boutons d'action */}
-            <Col md={4} className="d-flex flex-column justify-content-center gap-3">
-              <Button style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }} className="w-100 fw-bold" onClick={handleSend}>
-                Envoyer
-              </Button>
-              <Button style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }} className="w-100 fw-bold" onClick={handleSaveDevis}>
-                Enregistrer
-              </Button>
-              <Button style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }} className="w-100 fw-bold" onClick={handlePrint}>
-                Imprimer
-              </Button>
-              <Button variant="secondary" className="w-100" onClick={onCancel}>
-                Annuler
-              </Button>
-            </Col>
-          </Row>
-        </Modal.Body>
-      </Modal>
-
-      {/* Modal d'envoi pour client externe */}
-      {showSendModal && clientType === "externe" && (
-        <SendDevisModal
-          show={showSendModal}
-          onClose={() => setShowSendModal(false)}
-          devis={{ nomEntreprise, numeroDevis, total, date, client }}
-        />
-      )}
-    </>
+              {/* Actions */}
+              <div className="col-md-4 d-flex flex-column gap-3 align-items-start">
+                <button className="btn btn-success w-100 fw-bold" onClick={handleSave}>Enregistrer</button>
+                <button className="btn btn-secondary w-100" onClick={onCancel}>Annuler</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

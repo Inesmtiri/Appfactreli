@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Button, Card, Container, Row, Col, ListGroup, Badge } from "react-bootstrap";
+import {
+  Button,
+  Card,
+  Container,
+  Row,
+  Col,
+  ListGroup,
+  Badge,
+} from "react-bootstrap";
 import { FaFileAlt, FaTrash, FaPen } from "react-icons/fa";
 import DevisForm from "../components/Devis/DevisForm";
 
@@ -9,9 +17,10 @@ const DevisPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [devisToEdit, setDevisToEdit] = useState(null);
 
+  // 🔄 Charger les devis
   const fetchDevis = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/devis");
+      const res = await axios.get("/api/devis");
       setDevisList(res.data);
     } catch (err) {
       console.error("Erreur chargement devis:", err.message);
@@ -22,21 +31,25 @@ const DevisPage = () => {
     fetchDevis();
   }, []);
 
+  // ✏️ Modifier un devis existant
   const updateDevis = async (id, updatedData) => {
     try {
-      const res = await axios.put(`http://localhost:3001/api/devis/${id}`, updatedData);
-      setDevisList((prev) => prev.map((d) => (d._id === id ? res.data : d)));
+      const res = await axios.put(`/api/devis/${id}`, updatedData);
+      setDevisList((prev) =>
+        prev.map((d) => (d._id === id ? res.data : d))
+      );
     } catch (err) {
       console.error("Erreur mise à jour devis:", err.message);
     }
   };
 
+  // ➕ Ajouter ou mettre à jour un devis
   const handleAddDevis = async (devis) => {
     try {
       if (devisToEdit) {
         await updateDevis(devisToEdit._id, devis);
       } else {
-        const res = await axios.post("http://localhost:3001/api/devis", devis);
+        const res = await axios.post("/api/devis", devis);
         setDevisList((prev) => [...prev, res.data]);
       }
       setShowForm(false);
@@ -46,17 +59,19 @@ const DevisPage = () => {
     }
   };
 
+  // 🗑️ Supprimer un devis
   const handleDeleteDevis = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce devis ?")) {
       try {
-        await axios.delete(`http://localhost:3001/api/devis/${id}`);
-        setDevisList(devisList.filter((d) => d._id !== id));
+        await axios.delete(`/api/devis/${id}`);
+        setDevisList((prev) => prev.filter((d) => d._id !== id));
       } catch (err) {
         console.error("Erreur suppression devis:", err.message);
       }
     }
   };
 
+  // 🧾 Affichage/impression d'un devis
   const handleViewDevis = (devis) => {
     const devisHTML = `
       <html><head><title>Devis ${devis.numeroDevis}</title>
@@ -82,14 +97,18 @@ const DevisPage = () => {
         <table>
           <thead><tr><th>Description</th><th>Quantité</th><th>Prix Unitaire</th><th>Total</th></tr></thead>
           <tbody>
-            ${devis.lignes.map(l => `
+            ${devis.lignes
+              .map(
+                (l) => `
               <tr>
-                <td>${l.description}</td>
+                <td>${l.designation}</td>
                 <td>${l.quantite}</td>
                 <td>${l.prixUnitaire.toFixed(3)} TND</td>
                 <td>${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join("")}
           </tbody>
         </table>
         <div class="totals">
@@ -116,7 +135,10 @@ const DevisPage = () => {
         <Col xs="auto">
           <Button
             style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
-            onClick={() => { setShowForm(true); setDevisToEdit(null); }}
+            onClick={() => {
+              setShowForm(true);
+              setDevisToEdit(null);
+            }}
           >
             Ajouter
           </Button>
@@ -126,7 +148,10 @@ const DevisPage = () => {
       {showForm && (
         <DevisForm
           onAddDevis={handleAddDevis}
-          onCancel={() => { setShowForm(false); setDevisToEdit(null); }}
+          onCancel={() => {
+            setShowForm(false);
+            setDevisToEdit(null);
+          }}
           editData={devisToEdit}
         />
       )}
@@ -136,19 +161,44 @@ const DevisPage = () => {
         {devisList.length > 0 ? (
           <ListGroup variant="flush" className="d-flex flex-column gap-3">
             {devisList.map((devis) => (
-              <ListGroup.Item key={devis._id} className="d-flex justify-content-between align-items-center border rounded px-3 py-2">
-                <div onClick={() => handleViewDevis(devis)} style={{ cursor: "pointer" }}>
+              <ListGroup.Item
+                key={devis._id}
+                className="d-flex justify-content-between align-items-center border rounded px-3 py-2"
+              >
+                <div
+                  onClick={() => handleViewDevis(devis)}
+                  style={{ cursor: "pointer" }}
+                >
                   <FaFileAlt size={20} color="#23BD15" className="me-2" />
-                  <span className="fw-normal">{devis.client} - {devis.numeroDevis}</span>
-                  <Badge bg={devis.statut === "accepté" ? "success" : devis.statut === "refusé" ? "danger" : "warning"} className="ms-2">
+                  <span className="fw-normal">
+                    {devis.client} - {devis.numeroDevis}
+                  </span>
+                  <Badge
+                    bg={
+                      devis.statut === "accepté"
+                        ? "success"
+                        : devis.statut === "refusé"
+                        ? "danger"
+                        : "warning"
+                    }
+                    className="ms-2"
+                  >
                     {devis.statut}
                   </Badge>
                 </div>
                 <div className="d-flex gap-2">
-                  <Button variant="link" className="text-dark p-0" onClick={() => handleEditDevis(devis)}>
+                  <Button
+                    variant="link"
+                    className="text-dark p-0"
+                    onClick={() => handleEditDevis(devis)}
+                  >
                     <FaPen size={16} />
                   </Button>
-                  <Button variant="link" className="text-dark p-0" onClick={() => handleDeleteDevis(devis._id)}>
+                  <Button
+                    variant="link"
+                    className="text-dark p-0"
+                    onClick={() => handleDeleteDevis(devis._id)}
+                  >
                     <FaTrash size={16} />
                   </Button>
                 </div>
@@ -156,7 +206,9 @@ const DevisPage = () => {
             ))}
           </ListGroup>
         ) : (
-          <p className="text-center text-muted">Aucun devis enregistré pour l’instant.</p>
+          <p className="text-center text-muted">
+            Aucun devis enregistré pour l’instant.
+          </p>
         )}
       </Card>
     </Container>

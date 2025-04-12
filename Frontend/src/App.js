@@ -11,7 +11,7 @@ import About from './Admin/Pages/About';
 import Dashboard from './Admin/Pages/Dashboard';
 import Client from './Admin/Pages/Client';
 import Devis from './Admin/Pages/Devis';
-import Projets from './Admin/Pages/Projets';
+
 import Factures from './Admin/Pages/Factures';
 import Depenses from './Admin/Pages/Depense';
 import Produits from './Admin/Pages/Produits';
@@ -48,7 +48,7 @@ function App() {
           <Route path="depenses" element={<Depenses />} />
           <Route path="produits" element={<Produits />} />
           <Route path="utilisateurs" element={<Utilisateurs />} />
-          <Route path="projets" element={<Projets />} />
+         
           <Route path="paiement" element={<Paiement />} />
         </Route>
 

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaEdit } from "react-icons/fa";
 import DepenseForm from "../components/DepenceForm";
 import axios from "axios";
 
 const DepensePage = () => {
   const [depenses, setDepenses] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editData, setEditData] = useState(null);
 
-  // 📦 Charger les dépenses depuis le backend
+  // 📦 Charger les dépenses
   const fetchDepenses = async () => {
     try {
       const res = await axios.get("/api/depenses");
@@ -21,15 +22,31 @@ const DepensePage = () => {
     fetchDepenses();
   }, []);
 
-  // ➕ Ajouter une dépense
-  const handleAddDepense = async (depense) => {
+  // ➕ Ajouter ou modifier une dépense
+  const handleSaveDepense = async (depense) => {
     try {
-      const res = await axios.post("/api/depenses", depense);
-      setDepenses([res.data, ...depenses]); // ajouter en haut
+      if (editData) {
+        // Mode édition
+        const res = await axios.put(`/api/depenses/${editData._id}`, depense);
+        setDepenses(
+          depenses.map((d) => (d._id === editData._id ? res.data : d))
+        );
+      } else {
+        // Nouvelle dépense
+        const res = await axios.post("/api/depenses", depense);
+        setDepenses([res.data, ...depenses]);
+      }
       setShowForm(false);
+      setEditData(null);
     } catch (err) {
-      console.error("Erreur lors de l'ajout :", err);
+      console.error("Erreur lors de l'enregistrement :", err);
     }
+  };
+
+  // ✏️ Modifier une dépense
+  const handleEditDepense = (depense) => {
+    setEditData(depense);
+    setShowForm(true);
   };
 
   // ❌ Supprimer une dépense
@@ -51,7 +68,10 @@ const DepensePage = () => {
         <div className="d-flex justify-content-end mb-4">
           <button
             className="btn fw-bold"
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditData(null);
+              setShowForm(true);
+            }}
             style={{
               backgroundColor: "#00B507",
               color: "white",
@@ -67,8 +87,12 @@ const DepensePage = () => {
       {/* ✅ Formulaire */}
       {showForm && (
         <DepenseForm
-          onCancel={() => setShowForm(false)}
-          onSave={handleAddDepense}
+          onCancel={() => {
+            setShowForm(false);
+            setEditData(null);
+          }}
+          onSave={handleSaveDepense}
+          editData={editData}
         />
       )}
 
@@ -96,7 +120,9 @@ const DepensePage = () => {
                     <div className="fw-semibold fst-italic mb-1">
                       {depense.categorie || "Sans catégorie"}
                     </div>
-                    <small className="text-muted">{new Date(depense.date).toLocaleDateString()}</small>
+                    <small className="text-muted">
+                      {new Date(depense.date).toLocaleDateString()}
+                    </small>
                     <p className="mb-0">{depense.description || "Pas de description"}</p>
                   </div>
 
@@ -105,9 +131,16 @@ const DepensePage = () => {
                       {parseFloat(depense.montant).toFixed(3)} TND
                     </span>
                     <button
+                      className="btn btn-link text-primary p-0"
+                      onClick={() => handleEditDepense(depense)}
+                      title="Modifier"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
                       className="btn btn-link text-dark p-0"
                       onClick={() => handleDeleteDepense(depense._id)}
-                      title="Supprimer cette dépense"
+                      title="Supprimer"
                     >
                       <FaTrash size={16} />
                     </button>

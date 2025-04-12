@@ -1,16 +1,23 @@
-import express from 'express';
+import express from "express";
 import {
-  addDevis,      // ✅ corriger ici
-  getDevis,
+  ajouterDevis,
+  getAllDevis,
   updateDevis,
-  deleteDevis
-} from '../controllers/devisController.js';
+  deleteDevis,
+} from "../controllers/devisController.js";
 
 const router = express.Router();
 
-router.post('/', addDevis);          // ✅ corriger ici
-router.get('/', getDevis);
-router.put('/:id', updateDevis);
-router.delete('/:id', deleteDevis);
+// ➕ Créer un devis
+router.post("/", ajouterDevis);
+
+// 📄 Lister tous les devis
+router.get("/", getAllDevis);
+
+// ✏️ Modifier un devis
+router.put("/:id", updateDevis);
+
+// ❌ Supprimer un devis
+router.delete("/:id", deleteDevis);
 
 export default router;

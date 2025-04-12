@@ -5,7 +5,6 @@ import {
   FaUsers,
   FaUserTie,
   FaFileAlt,
-  FaProjectDiagram,
   FaMoneyBillWave,
   FaShoppingCart,
   FaBox,
@@ -24,7 +23,6 @@ const Sidebar = () => {
     { name: "Devis", icon: <FaFileAlt />, path: "/devis" },
     { name: "Facture", icon: <FaFileAlt />, path: "/factures" },
     { name: "Paiement", icon: <FaMoneyBillWave />, path: "/paiement" },
-    { name: "Projet", icon: <FaProjectDiagram />, path: "/projets" },
     { name: "Depenses", icon: <FaShoppingCart />, path: "/depenses" },
     { name: "Produit et services", icon: <FaBox />, path: "/produits" },
   ];

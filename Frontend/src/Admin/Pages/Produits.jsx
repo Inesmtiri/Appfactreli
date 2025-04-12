@@ -146,13 +146,21 @@ const ProduitServicePage = () => {
               >
                 {produit.stockActuel === 0 ? "Rupture" : "En stock"}
               </Badge>
-              <Button variant="link" className="text-primary p-0" onClick={() => {
-                setProduitEnCours(produit);
-                setShowAddProduitModal(true);
-              }}>
+              <Button
+                variant="link"
+                className="text-primary p-0"
+                onClick={() => {
+                  setProduitEnCours(produit);
+                  setShowAddProduitModal(true);
+                }}
+              >
                 <FaPen />
               </Button>
-              <Button variant="link" className="text-dark p-0" onClick={() => handleDeleteProduit(produit._id)}>
+              <Button
+                variant="link"
+                className="text-dark p-0"
+                onClick={() => handleDeleteProduit(produit._id)}
+              >
                 <FaTrash />
               </Button>
             </div>
@@ -168,13 +176,21 @@ const ProduitServicePage = () => {
               <div className="text-muted small">{service.description}</div>
             </div>
             <div className="d-flex align-items-center gap-3">
-              <Button variant="link" className="text-primary p-0" onClick={() => {
-                setServiceEnCours(service);
-                setShowAddServiceModal(true);
-              }}>
+              <Button
+                variant="link"
+                className="text-primary p-0"
+                onClick={() => {
+                  setServiceEnCours(service);
+                  setShowAddServiceModal(true);
+                }}
+              >
                 <FaPen />
               </Button>
-              <Button variant="link" className="text-dark p-0" onClick={() => handleDeleteService(service._id)}>
+              <Button
+                variant="link"
+                className="text-dark p-0"
+                onClick={() => handleDeleteService(service._id)}
+              >
                 <FaTrash />
               </Button>
             </div>

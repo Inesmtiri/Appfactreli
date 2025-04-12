@@ -49,7 +49,7 @@ const FacturePage = () => {
   const handleToggleStatut = async (id, statutActuel) => {
     try {
       const nouveauStatut = statutActuel === "payé" ? "non payé" : "payé";
-      const res = await axios.put(`/api/factures/${id}`, { statut: nouveauStatut });
+      await axios.put(`/api/factures/${id}`, { statut: nouveauStatut });
       const updated = factureList.map(f =>
         f._id === id ? { ...f, statut: nouveauStatut } : f
       );
@@ -60,6 +60,7 @@ const FacturePage = () => {
   };
 
   const handleViewFacture = (facture) => {
+    const clientNom = facture.client?.nom || facture.client?.societe || facture.client;
     const factureHTML = `
       <html><head><title>Facture ${facture.numeroFacture}</title>
       <style>
@@ -72,7 +73,7 @@ const FacturePage = () => {
       </head><body>
         <h1>${facture.nomEntreprise || "Nom Entreprise"}</h1>
         <p><strong>Téléphone:</strong> ${facture.telephone || "-"}</p>
-        <p><strong>Client:</strong> ${facture.client || "-"}</p>
+        <p><strong>Client:</strong> ${clientNom}</p>
         <p><strong>Date:</strong> ${facture.date?.slice(0, 10) || "-"}</p>
         <p><strong>Numéro:</strong> ${facture.numeroFacture}</p>
         <p><strong>Référence:</strong> ${facture.reference}</p>
@@ -144,7 +145,7 @@ const FacturePage = () => {
                 >
                   <div>
                     <span className="fw-semibold fst-italic">
-                      {facture.nomEntreprise || "Entreprise"} - {facture.numeroFacture}
+                      {(facture.client?.nom || facture.client?.societe || "Client")} - {facture.numeroFacture}
                     </span>
                     <span className={`ms-3 badge ${facture.statut === "payé" ? "bg-success" : "bg-warning text-dark"}`}>
                       {facture.statut || "non payé"}

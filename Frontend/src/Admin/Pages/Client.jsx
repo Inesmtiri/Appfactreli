@@ -58,7 +58,7 @@ const ClientPage = () => {
   };
 
   return (
-    <div className="mt-4" style={{ padding: "20px", marginLeft: "250px" }}>
+    <div className="container py-4">
       {/* ✅ Formulaire d’ajout ou modification */}
       {showForm && (
         <ClientForm

@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 import userRoutes from './routes/userRoutes.js';
 import aboutRoutes from './routes/aboutRoutes.js';
-import projetRoutes from './routes/projetRoutes.js';
+
 import clientRoutes from './routes/clientRoutes.js';
 import utilisateurRoutes from './routes/utilisateurRoutes.js';
 import paiementRoutes from './routes/paiementRoutes.js'; // ✅ Nouvelle ligne ajoutée
@@ -28,7 +28,6 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/utilisateur', utilisateurRoutes);
-app.use('/api/projets', projetRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/paiements', paiementRoutes); // ✅ Route Paiement ajoutée ici
 app.use('/api/services', serviceRoutes);

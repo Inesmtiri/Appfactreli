@@ -1,34 +1,57 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const ligneSchema = new mongoose.Schema({
-  description: { type: String, required: true },
-  quantite: { type: Number, required: true },
-  prixUnitaire: { type: Number, required: true }
-}, { _id: false });
-
-const devisSchema = new mongoose.Schema({
-  clientType: {
-    type: String,
-    enum: ['interne', 'externe'],
-    required: true
-  },
-  clientId: {
+  itemId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Client',
-    required: function () { return this.clientType === 'interne'; }
+    required: true,
+    refPath: "lignes.type", // référence dynamique : "produit" ou "service"
   },
-  client: { type: String }, // nom du client externe ou interne
-  nomEntreprise: { type: String },
-  telephone: { type: String },
-  date: { type: Date, required: true },
-  numeroDevis: { type: String, required: true },
-  reference: { type: String },
-  lignes: [ligneSchema],
-  subtotal: { type: Number, required: true },
-  tax: { type: Number, required: true },
-  total: { type: Number, required: true }
-}, {
-  timestamps: true
+  type: {
+    type: String,
+    enum: ["produit", "service"],
+    required: true,
+  },
+  designation: {
+    type: String,
+    required: true,
+  },
+  quantite: {
+    type: Number,
+    required: true,
+  },
+  prixUnitaire: {
+    type: Number,
+    required: true,
+  },
 });
 
-export default mongoose.model('Devis', devisSchema);
+const devisSchema = new mongoose.Schema({
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Client",
+    required: true,
+  },
+  client: {
+    type: String,
+    required: true,
+  },
+  nomEntreprise: String,
+  telephone: String,
+  date: String,
+  numeroDevis: String,
+  reference: String,
+  lignes: [ligneSchema],
+  subtotal: Number,
+  tax: Number,
+  total: Number,
+  statut: {
+    type: String,
+    enum: ["en attente", "accepté", "refusé"],
+    default: "en attente",
+  },
+}, {
+  timestamps: true,
+});
+
+const Devis = mongoose.model("Devis", devisSchema);
+export default Devis;

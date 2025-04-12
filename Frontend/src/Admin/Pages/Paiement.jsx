@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css"; // Important pour les icônes
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 const API_URL = "http://localhost:3001/api/paiements";
 
@@ -10,7 +10,7 @@ const Paiement = () => {
   const [formData, setFormData] = useState({
     numeroFacture: "",
     datePaiement: "",
-    typePaiement: "",
+    typePaiement: "en ligne",
     montant: "",
     statut: true,
   });
@@ -80,7 +80,7 @@ const Paiement = () => {
     setFormData({
       numeroFacture: "",
       datePaiement: "",
-      typePaiement: "",
+      typePaiement: "en ligne",
       montant: "",
       statut: true,
     });
@@ -88,9 +88,9 @@ const Paiement = () => {
   };
 
   return (
-    <div style={{ marginLeft: "250px", padding: "20px" }}>
+    <div className="container py-4">
       {/* Formulaire */}
-      <div className="p-4 bg-white rounded shadow-sm mb-4" style={{ maxWidth: "1200px", margin: "auto" }}>
+      <div className="p-4 bg-white rounded shadow-sm mb-4 mx-auto" style={{ maxWidth: "1000px" }}>
         <h5 className="mb-4 fw-bold text-dark">
           <i className="bi bi-plus-circle me-2"></i>
           {editId ? "Modifier le paiement" : "Ajouter un paiement"}
@@ -129,7 +129,6 @@ const Paiement = () => {
               onChange={handleChange}
               className="form-select"
             >
-        
               <option value="en ligne">En ligne</option>
               <option value="hors ligne">Hors ligne</option>
             </select>
@@ -169,7 +168,7 @@ const Paiement = () => {
             <div className="d-flex gap-2">
               <button
                 type="submit"
-                className={`btn ${editId ? "btn-warning" : "btn-vert"} px-4`}
+                className={`btn ${editId ? "btn-warning" : "btn-success"} px-4`}
               >
                 <i className={`bi ${editId ? "bi-pencil-square" : "bi-plus-circle"} me-1`}></i>
                 {editId ? "Modifier" : "Ajouter"}
@@ -189,56 +188,58 @@ const Paiement = () => {
       </div>
 
       {/* Liste des paiements */}
-      <div className="p-4 bg-white rounded shadow-sm" style={{ maxWidth: "1200px", margin: "auto" }}>
+      <div className="p-4 bg-white rounded shadow-sm mx-auto" style={{ maxWidth: "1000px" }}>
         <h5 className="mb-3 fw-bold text-dark">
           <i className="bi bi-list-check me-2"></i>
           Liste des paiements
         </h5>
 
-        <table className="table table-hover table-bordered align-middle">
-          <thead className="table-light">
-            <tr>
-              <th>Facture</th>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Montant</th>
-              <th>Statut</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paiements.length === 0 ? (
+        <div className="table-responsive">
+          <table className="table table-hover table-bordered align-middle">
+            <thead className="table-light">
               <tr>
-                <td colSpan="6" className="text-center text-muted">
-                  Aucun paiement trouvé.
-                </td>
+                <th>Facture</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th className="text-center">Actions</th>
               </tr>
-            ) : (
-              paiements.map((p) => (
-                <tr key={p._id}>
-                  <td><i className="bi bi-receipt text-success me-1"></i> {p.numeroFacture}</td>
-                  <td>{p.datePaiement ? new Date(p.datePaiement).toLocaleDateString() : "-"}</td>
-                  <td>{p.typePaiement || "-"}</td>
-                  <td>{p.montant} TND</td>
-                  <td>
-                    <span className={`badge ${p.statut ? "bg-success" : "bg-danger"}`}>
-                      <i className={`bi ${p.statut ? "bi-check-circle-fill" : "bi-x-circle-fill"} me-1`}></i>
-                      {p.statut ? "Payé" : "Non payé"}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(p)}>
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p._id)}>
-                      <i className="bi bi-trash"></i>
-                    </button>
+            </thead>
+            <tbody>
+              {paiements.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center text-muted">
+                    Aucun paiement trouvé.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paiements.map((p) => (
+                  <tr key={p._id}>
+                    <td><i className="bi bi-receipt text-success me-1"></i> {p.numeroFacture}</td>
+                    <td>{p.datePaiement ? new Date(p.datePaiement).toLocaleDateString() : "-"}</td>
+                    <td>{p.typePaiement || "-"}</td>
+                    <td>{p.montant} TND</td>
+                    <td>
+                      <span className={`badge ${p.statut ? "bg-success" : "bg-danger"}`}>
+                        <i className={`bi ${p.statut ? "bi-check-circle-fill" : "bi-x-circle-fill"} me-1`}></i>
+                        {p.statut ? "Payé" : "Non payé"}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleEdit(p)}>
+                        <i className="bi bi-pencil"></i>
+                      </button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p._id)}>
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

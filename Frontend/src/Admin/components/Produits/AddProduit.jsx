@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
 import axios from "axios";
 
-const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
-  const [produit, setProduit] = useState({
+const AddProduit = ({ show, onHide, onSave, produit = null }) => {
+  const [formData, setFormData] = useState({
     reference: "",
     categorie: "",
     enAchat: false,
@@ -15,12 +15,19 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
   });
 
   useEffect(() => {
-    if (produitToEdit) {
-      // préremplir le formulaire sans ID (car on veut créer un nouveau produit)
-      const { _id, ...rest } = produitToEdit;
-      setProduit(rest);
+    if (produit) {
+      setFormData({
+        reference: produit.reference || "",
+        categorie: produit.categorie || "",
+        enAchat: produit.enAchat || false,
+        enVente: produit.enVente || false,
+        prixVente: produit.prixVente || "",
+        prixAchat: produit.prixAchat || "",
+        stockMin: produit.stockMin || "",
+        stockActuel: produit.stockActuel || "",
+      });
     } else {
-      setProduit({
+      setFormData({
         reference: "",
         categorie: "",
         enAchat: false,
@@ -31,39 +38,32 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
         stockActuel: "",
       });
     }
-  }, [produitToEdit]);
+  }, [produit]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setProduit({
-      ...produit,
+    setFormData({
+      ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  const handleSave = async () => {
-    if (!produit.reference || !produit.categorie) {
+  const handleSave = () => {
+    if (!formData.reference || !formData.categorie) {
       alert("La référence et la catégorie sont obligatoires !");
       return;
     }
 
-    const stockActuel = parseInt(produit.stockActuel, 10);
+    const stockActuel = parseInt(formData.stockActuel, 10);
     const statut = stockActuel === 0 ? "rupture" : "en stock";
 
-    const nouveauProduit = {
-      ...produit,
+    const dataToSend = {
+      ...formData,
       stockActuel,
       statut,
     };
 
-    try {
-      const response = await axios.post("http://localhost:3001/api/produits", nouveauProduit);
-      onSave(response.data);
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement du produit:", error);
-      alert("Erreur lors de l'enregistrement du produit.");
-    }
-
+    onSave(dataToSend);
     onHide();
   };
 
@@ -72,7 +72,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
       <Modal.Header closeButton>
         <Modal.Title>
           <span className="fw-normal fst-italic">
-            {produitToEdit ? "Modifier le produit :" : "Nouveau produit :"}
+            {produit ? "Modifier le produit :" : "Nouveau produit :"}
           </span>
         </Modal.Title>
       </Modal.Header>
@@ -85,7 +85,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="text"
                 name="reference"
-                value={produit.reference}
+                value={formData.reference}
                 onChange={handleChange}
                 placeholder="Référence"
               />
@@ -98,7 +98,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="text"
                 name="categorie"
-                value={produit.categorie}
+                value={formData.categorie}
                 onChange={handleChange}
                 placeholder="Catégorie"
               />
@@ -111,7 +111,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Check
                 type="checkbox"
                 name="enAchat"
-                checked={produit.enAchat}
+                checked={formData.enAchat}
                 onChange={handleChange}
               />
             </Col>
@@ -120,7 +120,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Check
                 type="checkbox"
                 name="enVente"
-                checked={produit.enVente}
+                checked={formData.enVente}
                 onChange={handleChange}
               />
             </Col>
@@ -132,7 +132,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="number"
                 name="prixVente"
-                value={produit.prixVente}
+                value={formData.prixVente}
                 onChange={handleChange}
                 placeholder="Prix de vente"
               />
@@ -145,7 +145,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="number"
                 name="prixAchat"
-                value={produit.prixAchat}
+                value={formData.prixAchat}
                 onChange={handleChange}
                 placeholder="Prix d'achat"
               />
@@ -158,7 +158,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="number"
                 name="stockMin"
-                value={produit.stockMin}
+                value={formData.stockMin}
                 onChange={handleChange}
                 placeholder="Stock minimal"
               />
@@ -171,7 +171,7 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
               <Form.Control
                 type="number"
                 name="stockActuel"
-                value={produit.stockActuel}
+                value={formData.stockActuel}
                 onChange={handleChange}
                 placeholder="Stock actuel"
                 min="0"
@@ -183,10 +183,10 @@ const AddProduit = ({ show, onHide, onSave, produitToEdit = null }) => {
 
       <Modal.Footer>
         <Button
-          style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
+          style={{ backgroundColor: "#00B507", borderColor: "#00B507" }}
           onClick={handleSave}
         >
-          {produitToEdit ? "Enregistrer comme nouveau" : "Créer"}
+          {produit ? "Modifier" : "Créer"}
         </Button>
         <Button
           style={{ backgroundColor: "#5B9BD5", borderColor: "#5B9BD5" }}
