@@ -6,6 +6,8 @@ import WelcomePage from './Admin/Pages/WelcomePage';
 import Inscription from './Admin/Pages/Inscription';
 import Connexion from './Admin/Pages/Connexion';
 import About from './Admin/Pages/About';
+import ForgotPassword from "./Admin/Pages/ForgotPassword";
+import ResetPassword from "./Admin/Pages/ResetPassword";
 
 // ✅ Pages internes (admin)
 import Dashboard from './Admin/Pages/Dashboard';
@@ -16,7 +18,8 @@ import Factures from './Admin/Pages/Factures';
 import Depenses from './Admin/Pages/Depense';
 import Produits from './Admin/Pages/Produits';
 import Paiement from './Admin/Pages/Paiement';
-import Utilisateurs from './Admin/Pages/Utilisateurs';
+
+
 
 // ✅ Layout global admin
 import Layout from './Admin/components/Layout';
@@ -26,7 +29,7 @@ import LayoutClient from './Clients/Components/LayoutClient';
 import DashboardClient from './Clients/Pages/DashboardClient';
 import MesDevis from './Clients/Pages/MesDevis';
 import MesFacture from './Clients/Pages/MesFacture';
-import FactureDetails from './Clients/Components/FactureDetails'; // ✅ ajouté
+// ✅ ajouté
 
 function App() {
   return (
@@ -37,6 +40,8 @@ function App() {
         <Route index element={<WelcomePage />} />
         <Route path="inscription" element={<Inscription />} />
         <Route path="login" element={<Connexion />} />
+        <Route path="ForgotPassword" element={<ForgotPassword />} />
+        <Route path="resetpassword" element={<ResetPassword />} />
         <Route path="about" element={<About />} />
 
         {/* ✅ Interface ADMIN */}
@@ -47,9 +52,10 @@ function App() {
           <Route path="factures" element={<Factures />} />
           <Route path="depenses" element={<Depenses />} />
           <Route path="produits" element={<Produits />} />
-          <Route path="utilisateurs" element={<Utilisateurs />} />
          
           <Route path="paiement" element={<Paiement />} />
+          
+
         </Route>
 
         {/* ✅ Interface CLIENT */}
@@ -57,7 +63,7 @@ function App() {
           <Route path="client/dashboard" element={<DashboardClient />} />
           <Route path="client/mes-devis" element={<MesDevis />} />
           <Route path="client/mes-factures" element={<MesFacture />} />
-          <Route path="client/facture/:id" element={<FactureDetails />} /> {/* ✅ détail */}
+      
         </Route>
 
       </Routes>

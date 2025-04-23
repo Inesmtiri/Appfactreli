@@ -11,7 +11,6 @@ import { FaUpload, FaTrash, FaPen } from "react-icons/fa";
 import AddProduitModal from "../components/Produits/AddProduit";
 import AddServiceModal from "../components/Produits/AddService";
 import ProduitServiceTabs from "../components/Produits/ProduitServiceTabs";
-import * as XLSX from "xlsx";
 import axios from "axios";
 
 const ProduitServicePage = () => {

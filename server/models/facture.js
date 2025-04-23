@@ -1,11 +1,11 @@
-// models/Facture.js
 import mongoose from "mongoose";
 
+// Schéma pour une ligne (produit ou service)
 const ligneSchema = new mongoose.Schema({
   itemId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: "lignes.type", // Référence dynamique à "produit" ou "service"
+    refPath: "lignes.type", // Référence dynamique vers produit ou service
   },
   type: {
     type: String,
@@ -26,31 +26,44 @@ const ligneSchema = new mongoose.Schema({
   },
 });
 
-const factureSchema = new mongoose.Schema({
-  client: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Client",
-    required: true,
+// Schéma principal de facture
+const factureSchema = new mongoose.Schema(
+  {
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Client",
+      required: true,
+    },
+    date: { type: String, required: true },
+    numeroFacture: { type: String, required: true },
+    reference: { type: String, required: true },
+    lignes: [ligneSchema],
+    subtotal: { type: Number, required: true },
+    tax: { type: Number, required: true },
+    total: { type: Number, required: true },
+    montantPaye: { type: Number, default: 0 },
+    montantRestant: {
+      type: Number,
+      default: function () {
+        return this.total - this.montantPaye;
+      },
+    },
+    tvaRate: { type: Number, default: 0 },
+    modePaiement: { type: String, default: "non spécifié" },
+    nomEntreprise: String,
+    telephone: String,
+    statut: {
+      type: String,
+      enum: ["payé", "non payé", "partiellement payé"],
+      // ✅ plus de default, le statut sera calculé dans le backend
+    },
+    envoyée: {
+      type: Boolean,
+      default: false,
+    },
   },
-  date: String,
-  numeroFacture: String,
-  reference: String,
-  lignes: [ligneSchema],
-  subtotal: Number,
-  tax: Number,
-  total: Number,
-  montantPaye: Number,
-  montantRestant: Number,
-  tvaRate: Number,
-  modePaiement: String,
-  nomEntreprise: String,
-  telephone: String,
-  statut: {
-    type: String,
-    enum: ["payé", "non payé"],
-    default: "non payé",
-  },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 const Facture = mongoose.model("Facture", factureSchema);
 export default Facture;

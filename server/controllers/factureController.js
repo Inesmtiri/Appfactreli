@@ -1,4 +1,3 @@
-// controllers/factureController.js
 import Facture from "../models/facture.js";
 
 // Créer une facture
@@ -30,6 +29,7 @@ export const ajouterFacture = async (req, res) => {
       nomEntreprise: data.nomEntreprise,
       telephone: data.telephone,
       statut: data.statut || "non payé",
+      envoyée: data.envoyée || false,
     });
 
     const saved = await nouvelleFacture.save();
@@ -42,13 +42,14 @@ export const ajouterFacture = async (req, res) => {
 
 // Lister toutes les factures
 export const getAllFactures = async (req, res) => {
-    try {
-      const factures = await Facture.find().populate("client"); // 👉 récupère les infos du client
-      res.json(factures);
-    } catch (err) {
-      res.status(500).json({ message: "Erreur chargement factures" });
-    }
-  };
+  try {
+    const factures = await Facture.find().populate("client");
+    res.json(factures);
+  } catch (err) {
+    console.error("Erreur chargement factures :", err);
+    res.status(500).json({ message: "Erreur chargement factures" });
+  }
+};
 
 // Modifier une facture
 export const updateFacture = async (req, res) => {
@@ -96,9 +97,33 @@ export const updateFacture = async (req, res) => {
 // Supprimer une facture
 export const deleteFacture = async (req, res) => {
   try {
-    await Facture.findByIdAndDelete(req.params.id);
+    const facture = await Facture.findByIdAndDelete(req.params.id);
+    if (!facture) {
+      return res.status(404).json({ message: "Facture non trouvée" });
+    }
     res.json({ message: "Facture supprimée." });
   } catch (error) {
+    console.error("Erreur suppression facture :", error);
     res.status(500).json({ message: "Erreur suppression." });
   }
 };
+
+// Envoyer une facture (changer le statut à "envoyé")
+export const envoyerFacture = async (req, res) => {
+  try {
+    const facture = await Facture.findByIdAndUpdate(
+      req.params.id,
+      {  envoyée: true},
+      { new: true }
+    );
+
+    if (!facture) {
+      return res.status(404).json({ message: "Facture non trouvée" });
+    }
+
+    res.json(facture);
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de la facture :", error);
+    res.status(500).json({ message: "Erreur envoi facture" });
+  }
+}; 

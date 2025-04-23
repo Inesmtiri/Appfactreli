@@ -5,17 +5,18 @@ import dotenv from 'dotenv';
 
 import userRoutes from './routes/userRoutes.js';
 import aboutRoutes from './routes/aboutRoutes.js';
-
 import clientRoutes from './routes/clientRoutes.js';
-import utilisateurRoutes from './routes/utilisateurRoutes.js';
-import paiementRoutes from './routes/paiementRoutes.js'; // ✅ Nouvelle ligne ajoutée
-
+import paiementRoutes from './routes/paiementRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import produitRoutes from './routes/produitRoutes.js';
-import devisRoutes from './routes/devisRoutes.js'; // ✅ nouveau
+import devisRoutes from './routes/devisRoutes.js';
 import factureRoutes from "./routes/factureRoutes.js";
 import emailRoutes from "./routes/emailRoutes.js";
-import depenseRoutes from"./routes/depenseRoutes.js";
+import depenseRoutes from "./routes/depenseRoutes.js";
+import authRoutes from './routes/authRoutes.js';
+import clientDevisRoutes from "./routes/clientDevisRoutes.js";
+import mesFacturesRoutes from "./routes/mesFacturesRoutes.js"; // ✅ export corrigé
+
 dotenv.config();
 
 const app = express();
@@ -27,15 +28,24 @@ app.use(express.json());
 // 🔗 Routes
 app.use('/api/users', userRoutes);
 app.use('/api/about', aboutRoutes);
-app.use('/api/utilisateur', utilisateurRoutes);
 app.use('/api/clients', clientRoutes);
-app.use('/api/paiements', paiementRoutes); // ✅ Route Paiement ajoutée ici
+app.use('/api/paiements', paiementRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/produits', produitRoutes);
-app.use('/api/devis', devisRoutes); // ✅ ajout route devis
-app.use("/api/factures", factureRoutes);
-app.use("/api/depenses", depenseRoutes);
-app.use("/api/email", emailRoutes);
+app.use('/api/devis', devisRoutes);
+app.use('/api/factures', factureRoutes);
+app.use('/api/depenses', depenseRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/client/devis', clientDevisRoutes);
+app.use('/api/mes-factures', mesFacturesRoutes); // ✅ maintenant fonctionne
+
+// 🌐 Route de test
+app.get('/', (req, res) => {
+  res.send("Bienvenue sur l'API Facterli !");
+});
+
+// 🌍 Connexion MongoDB
 const PORT = process.env.PORT || 3001;
 const MONGODB_URL = process.env.MONGODB_URL;
 
@@ -44,7 +54,6 @@ if (!MONGODB_URL) {
   process.exit(1);
 }
 
-// ⚙️ Connexion MongoDB
 mongoose.connect(MONGODB_URL)
   .then(() => {
     console.log("✅ Connexion MongoDB réussie !");
@@ -56,8 +65,3 @@ mongoose.connect(MONGODB_URL)
     console.error("❌ Erreur de connexion MongoDB :", error.message);
     process.exit(1);
   });
-
-// 🌐 Route test
-app.get('/', (req, res) => {
-  res.send("Bienvenue sur l'API Facterli !");
-});

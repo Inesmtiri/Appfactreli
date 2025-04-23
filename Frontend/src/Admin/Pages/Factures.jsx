@@ -147,22 +147,11 @@ const FacturePage = () => {
                     <span className="fw-semibold fst-italic">
                       {(facture.client?.nom || facture.client?.societe || "Client")} - {facture.numeroFacture}
                     </span>
-                    <span className={`ms-3 badge ${facture.statut === "payé" ? "bg-success" : "bg-warning text-dark"}`}>
-                      {facture.statut || "non payé"}
-                    </span>
+                    
                   </div>
 
                   <div className="d-flex gap-2">
-                    <button
-                      className={`btn btn-sm ${facture.statut === "payé" ? "btn-success" : "btn-warning"}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleStatut(facture._id, facture.statut);
-                      }}
-                    >
-                      {facture.statut === "payé" ? "Payé" : "Non payé"}
-                    </button>
-
+                    
                     <button
                       className="btn btn-sm btn-outline-primary"
                       onClick={(e) => {

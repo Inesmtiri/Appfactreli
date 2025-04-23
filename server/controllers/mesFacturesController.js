@@ -9,22 +9,11 @@ export default function MesFacturesClient() {
   useEffect(() => {
     const fetchFactures = async () => {
       try {
-        const client = JSON.parse(localStorage.getItem("user"));
-
-        if (!client || !client.id) {
-          console.warn("❌ Aucun client connecté ou ID manquant dans localStorage");
-          return;
-        }
-
-        console.log("📦 ID client localStorage:", client.id); // DEBUG
-
+        const client = JSON.parse(localStorage.getItem("user")); // récupère l'ID du client
         const res = await axios.get(`http://localhost:3001/api/mes-factures/${client.id}`);
-
-        console.log("📊 Factures récupérées :", res.data); // DEBUG
-
         setFactures(res.data);
       } catch (err) {
-        console.error("❌ Erreur lors du chargement des factures :", err);
+        console.error("Erreur lors du chargement des factures :", err);
       }
     };
 
@@ -36,9 +25,7 @@ export default function MesFacturesClient() {
       <h2 className="mb-4">📄 Mes factures reçues</h2>
 
       {factures.length === 0 ? (
-        <div className="alert alert-info">
-          Vous n'avez encore reçu <strong>aucune facture</strong> ou les factures ne sont pas encore envoyées.
-        </div>
+        <p>Vous n'avez encore reçu aucune facture.</p>
       ) : (
         <table className="table table-hover table-bordered">
           <thead className="table-dark">
@@ -55,13 +42,11 @@ export default function MesFacturesClient() {
             {factures.map((facture, index) => (
               <tr key={facture._id}>
                 <td>{index + 1}</td>
-                <td>{facture.reference || "-"}</td>
+                <td>{facture.reference}</td>
                 <td>{new Date(facture.date).toLocaleDateString()}</td>
                 <td>{facture.total} TND</td>
                 <td>
-                  <span
-                    className={`badge ${facture.statut === "payé" ? "bg-success" : "bg-warning text-dark"}`}
-                  >
+                  <span className={`badge ${facture.statut === "payé" ? "bg-success" : "bg-danger"}`}>
                     {facture.statut}
                   </span>
                 </td>
@@ -70,7 +55,7 @@ export default function MesFacturesClient() {
                     className="btn btn-sm btn-primary"
                     onClick={() => navigate(`/client/facture/${facture._id}`)}
                   >
-                    Détail
+                    Voir
                   </button>
                 </td>
               </tr>

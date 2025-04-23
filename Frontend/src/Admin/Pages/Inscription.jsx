@@ -11,8 +11,6 @@ const Inscription = () => {
     telephone: "",
   });
 
-  const [role, setRole] = useState("");
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -22,23 +20,17 @@ const Inscription = () => {
     e.preventDefault();
 
     try {
-      const dataToSend = { ...formData, role };
-
-      const res = await axios.post("http://localhost:3001/api/users/register", dataToSend);
+      const res = await axios.post("http://localhost:3001/api/users/register", formData);
 
       alert("Inscription réussie !");
       console.log("✅ Données envoyées :", res.data);
 
       localStorage.setItem("user", JSON.stringify(res.data));
 
-      // 🔁 Redirection selon le rôle
-      if (role === "admin") {
-        window.location.href = "/about";
-      } else {
-        window.location.href = "/login";
-      }
+      // Redirection générique
+      window.location.href = "/about";
 
-      // Réinitialiser le formulaire
+      // Réinitialiser
       setFormData({
         prenom: "",
         nom: "",
@@ -46,7 +38,6 @@ const Inscription = () => {
         password: "",
         telephone: "",
       });
-      setRole("");
 
     } catch (err) {
       console.error("❌ Erreur d'inscription :", err.response?.data?.message || err.message);

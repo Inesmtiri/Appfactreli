@@ -14,7 +14,6 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
   const [numeroDevis, setNumeroDevis] = useState(editData?.numeroDevis || "000001");
   const [reference, setReference] = useState(editData?.reference || "");
-  const [logo, setLogo] = useState(null);
 
   const [lignes, setLignes] = useState(
     editData?.lignes?.map((l) => ({
@@ -95,21 +94,23 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
       subtotal,
       tax,
       total,
-      statut: "en attente",
+      statut: "envoyé",
     };
 
     try {
+      let res;
       if (editData?._id) {
-        const res = await axios.put(`/api/devis/${editData._id}`, devis);
-        onAddDevis(res.data);
+        res = await axios.put(`/api/devis/${editData._id}`, devis);
       } else {
-        const res = await axios.post("/api/devis", devis);
-        onAddDevis(res.data);
+        res = await axios.post("/api/devis", devis);
       }
+
+      onAddDevis(res.data);
+      alert(`✅ Devis ${editData ? "mis à jour" : "enregistré et envoyé"} avec succès !`);
       onCancel();
     } catch (err) {
-      console.error("Erreur enregistrement devis :", err.message);
-      alert("Erreur lors de l'enregistrement du devis");
+      console.error("Erreur :", err.message);
+      alert("❌ Erreur lors de l’envoi du devis");
     }
   };
 
@@ -120,9 +121,8 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
           <div className="modal-body">
             <div className="row">
               <div className="col-md-8" ref={printRef}>
-                <h4 className="fst-italic mb-4">Nouveau devis</h4>
+                <h4 className="fst-italic mb-4">{editData ? "Modifier devis" : "Nouveau devis"}</h4>
 
-                {/* Client */}
                 <div className="mb-3">
                   <label className="fw-semibold">Client</label>
                   <select className="form-select" value={clientId} onChange={(e) => setClientId(e.target.value)}>
@@ -135,11 +135,9 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                   </select>
                 </div>
 
-                {/* Infos entreprise */}
                 <input className="form-control mb-2" placeholder="Entreprise" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
                 <input className="form-control mb-3" placeholder="Téléphone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
 
-                {/* Infos devis */}
                 <div className="row mb-3">
                   <div className="col">
                     <label>Date</label>
@@ -155,7 +153,6 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                   </div>
                 </div>
 
-                {/* Lignes */}
                 <div className="table-responsive mb-3">
                   <table className="table table-bordered">
                     <thead>
@@ -191,7 +188,6 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                   <button className="btn btn-outline-primary" onClick={ajouterLigne}>+ Ajouter une ligne</button>
                 </div>
 
-                {/* Totaux */}
                 <div className="text-end">
                   <p><strong>Subtotal:</strong> {subtotal.toFixed(3)} TND</p>
                   <p><strong>Tax (19%):</strong> {tax.toFixed(3)} TND</p>
@@ -199,9 +195,11 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* ✅ Actions */}
               <div className="col-md-4 d-flex flex-column gap-3 align-items-start">
-                <button className="btn btn-success w-100 fw-bold" onClick={handleSave}>Enregistrer</button>
+                <button className={`btn ${editData ? "btn-warning" : "btn-vert"} w-100 fw-bold`} onClick={handleSave}>
+                  {editData ? "Mettre à jour" : "Envoyer"}
+                </button>
                 <button className="btn btn-secondary w-100" onClick={onCancel}>Annuler</button>
               </div>
             </div>

@@ -7,7 +7,6 @@ const DevisCard = ({ numero, date, montant }) => {
         <h5 className="card-title">Devis #{numero}</h5>
         <p>Date : {date}</p>
         <p>Montant : {montant}</p>
-        <button className="btn btn-sm btn-success">Voir</button>
       </div>
     </div>
   );

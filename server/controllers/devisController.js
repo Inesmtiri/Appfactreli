@@ -25,7 +25,8 @@ export const ajouterDevis = async (req, res) => {
       subtotal: data.subtotal,
       tax: data.tax,
       total: data.total,
-      statut: data.statut || "en attente",
+      statut: "en attente",
+
     });
 
     const saved = await nouveauDevis.save();
@@ -42,6 +43,7 @@ export const getAllDevis = async (req, res) => {
     const devis = await Devis.find();
     res.json(devis);
   } catch (error) {
+    console.error("Erreur backend getAllDevis :", error);
     res.status(500).json({ message: "Erreur lors du chargement des devis" });
   }
 };
@@ -74,7 +76,7 @@ export const updateDevis = async (req, res) => {
         subtotal: data.subtotal,
         tax: data.tax,
         total: data.total,
-        statut: data.statut || "en attente",
+        statut: "en attente",
       },
       { new: true }
     );
@@ -93,5 +95,61 @@ export const deleteDevis = async (req, res) => {
     res.json({ message: "Devis supprimé avec succès" });
   } catch (error) {
     res.status(500).json({ message: "Erreur suppression devis" });
+  }
+};
+
+// ✅ Envoyer un devis (changer statut en "envoyé")
+export const envoyerDevis = async (req, res) => {
+  try {
+    const devis = await Devis.findByIdAndUpdate(
+      req.params.id,
+      { statut: "envoyé" },
+      { new: true }
+    );
+    res.json(devis);
+  } catch (error) {
+    console.error("Erreur lors de l'envoi du devis :", error);
+    res.status(500).json({ message: "Erreur envoi devis" });
+  }
+};
+
+// ✅ Accepter un devis (changer statut en "accepté")
+export const acceptDevis = async (req, res) => {
+  try {
+    const devis = await Devis.findByIdAndUpdate(
+      req.params.id,
+      { statut: "accepté" },
+      { new: true }
+    );
+    res.json(devis);
+  } catch (error) {
+    console.error("Erreur lors de l'acceptation du devis :", error);
+    res.status(500).json({ message: "Erreur acceptation devis" });
+  }
+};
+
+// ✅ Refuser un devis (changer statut en "refusé")
+export const refuseDevis = async (req, res) => {
+  try {
+    const devis = await Devis.findByIdAndUpdate(
+      req.params.id,
+      { statut: "refusé" },
+      { new: true }
+    );
+    res.json(devis);
+  } catch (error) {
+    console.error("Erreur lors du refus du devis :", error);
+    res.status(500).json({ message: "Erreur refus devis" });
+  }
+};
+
+// ✅ Lister les devis d'un client (interface client)
+export const getDevisByClient = async (req, res) => {
+  try {
+    const devis = await Devis.find({ clientId: req.params.clientId });
+    res.json(devis);
+  } catch (error) {
+    console.error("Erreur chargement devis client :", error);
+    res.status(500).json({ message: "Erreur chargement devis client" });
   }
 };

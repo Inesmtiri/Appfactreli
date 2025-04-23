@@ -7,42 +7,59 @@ const API_URL = "http://localhost:3001/api/paiements";
 
 const Paiement = () => {
   const [paiements, setPaiements] = useState([]);
+  const [factures, setFactures] = useState([]);
   const [formData, setFormData] = useState({
-    numeroFacture: "",
+    facture: "",
     datePaiement: "",
     typePaiement: "en ligne",
     montant: "",
-    statut: true,
   });
   const [editId, setEditId] = useState(null);
+  const [montantRestant, setMontantRestant] = useState(0);
 
   const fetchPaiements = async () => {
     try {
       const res = await axios.get(API_URL);
       setPaiements(res.data);
     } catch (err) {
-      console.error("Erreur lors du chargement des paiements :", err);
+      console.error("Erreur chargement paiements :", err);
+    }
+  };
+
+  const fetchFactures = async () => {
+    try {
+      const res = await axios.get("http://localhost:3001/api/factures");
+      setFactures(res.data);
+    } catch (err) {
+      console.error("Erreur chargement factures :", err);
     }
   };
 
   useEffect(() => {
     fetchPaiements();
+    fetchFactures();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
-  const handleStatutToggle = () => {
-    setFormData((prev) => ({ ...prev, statut: !prev.statut }));
+    // ⚠️ Si la facture change, on met à jour le montant restant
+    if (name === "facture") {
+      const selected = factures.find((f) => f._id === value);
+      setMontantRestant(selected ? selected.montantRestant : 0);
+    }
   };
 
   const handleAddOrEditPaiement = async (e) => {
     e.preventDefault();
-
-    if (!formData.numeroFacture || !formData.montant) {
+    if (!formData.facture || !formData.montant) {
       alert("Veuillez remplir les champs obligatoires !");
+      return;
+    }
+
+    if (parseFloat(formData.montant) > montantRestant) {
+      alert("❌ Le montant payé dépasse le montant restant !");
       return;
     }
 
@@ -52,7 +69,10 @@ const Paiement = () => {
       } else {
         await axios.post(API_URL, formData);
       }
+
+      alert("✅ Paiement enregistré !");
       fetchPaiements();
+      fetchFactures();
       resetForm();
     } catch (err) {
       console.error("Erreur :", err);
@@ -66,25 +86,46 @@ const Paiement = () => {
         fetchPaiements();
         if (editId === id) resetForm();
       } catch (err) {
-        console.error("Erreur lors de la suppression :", err);
+        console.error("Erreur suppression :", err);
       }
     }
   };
 
   const handleEdit = (paiement) => {
     setEditId(paiement._id);
-    setFormData({ ...paiement });
+    setFormData({
+      facture: paiement.facture?._id || paiement.facture,
+      datePaiement: paiement.datePaiement?.slice(0, 10) || "",
+      typePaiement: paiement.typePaiement || "en ligne",
+      montant: paiement.montant,
+    });
+    setMontantRestant(paiement.facture?.montantRestant || 0);
   };
 
   const resetForm = () => {
     setFormData({
-      numeroFacture: "",
+      facture: "",
       datePaiement: "",
       typePaiement: "en ligne",
       montant: "",
-      statut: true,
     });
     setEditId(null);
+    setMontantRestant(0);
+  };
+
+  const handlePaiementSuivant = () => {
+    const factureNonPayee = factures.find((f) => f.statut !== "payé");
+    if (factureNonPayee) {
+      setFormData({
+        facture: factureNonPayee._id,
+        datePaiement: new Date().toISOString().slice(0, 10),
+        typePaiement: "en ligne",
+        montant: factureNonPayee.montantRestant,
+      });
+      setMontantRestant(factureNonPayee.montantRestant);
+    } else {
+      alert("🎉 Toutes les factures sont réglées !");
+    }
   };
 
   return (
@@ -98,16 +139,21 @@ const Paiement = () => {
 
         <form onSubmit={handleAddOrEditPaiement} className="d-flex flex-wrap align-items-end gap-3">
           <div className="flex-grow-1">
-            <label className="form-label">Numéro de facture</label>
-            <input
-              type="text"
-              name="numeroFacture"
-              value={formData.numeroFacture}
+            <label className="form-label">Facture</label>
+            <select
+              name="facture"
+              value={formData.facture}
               onChange={handleChange}
-              className="form-control"
-              placeholder="00001"
+              className="form-select"
               required
-            />
+            >
+              <option value="">-- Choisir une facture --</option>
+              {factures.map((f) => (
+                <option key={f._id} value={f._id}>
+                  {f.numeroFacture} - {f.nomEntreprise || "Client"} - {f.total} TND
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex-grow-1">
@@ -115,7 +161,7 @@ const Paiement = () => {
             <input
               type="date"
               name="datePaiement"
-              value={formData.datePaiement?.slice(0, 10) || ""}
+              value={formData.datePaiement}
               onChange={handleChange}
               className="form-control"
             />
@@ -135,7 +181,7 @@ const Paiement = () => {
           </div>
 
           <div className="flex-grow-1">
-            <label className="form-label">Montant (TND)</label>
+            <label className="form-label">Montant à payer (TND)</label>
             <input
               type="number"
               name="montant"
@@ -145,43 +191,26 @@ const Paiement = () => {
               placeholder="0"
               required
             />
+            {montantRestant > 0 && (
+              <div className="text-muted mt-1 small">
+                💡 Reste à payer : <strong>{montantRestant.toFixed(3)} TND</strong>
+              </div>
+            )}
           </div>
 
-          <div className="d-flex flex-column justify-content-between" style={{ minWidth: "150px" }}>
-            <label className="form-label">Statut</label>
-            <div className="form-check form-switch mb-2">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="statutSwitch"
-                checked={formData.statut}
-                onChange={handleStatutToggle}
-              />
-              <label className="form-check-label" htmlFor="statutSwitch">
-                {formData.statut ? "Payé" : "Non payé"}
-              </label>
-            </div>
-          </div>
-
-          <div className="d-flex flex-column justify-content-between">
+          <div className="d-flex flex-column justify-content-end">
             <label className="form-label invisible">Actions</label>
             <div className="d-flex gap-2">
-              <button
-                type="submit"
-                className={`btn ${editId ? "btn-warning" : "btn-success"} px-4`}
-              >
+              <button type="submit" className={`btn ${editId ? "btn-warning" : "btn-success"} px-4`}>
                 <i className={`bi ${editId ? "bi-pencil-square" : "bi-plus-circle"} me-1`}></i>
                 {editId ? "Modifier" : "Ajouter"}
               </button>
               {editId && (
-                <button
-                  type="button"
-                  className="btn btn-secondary px-4"
-                  onClick={resetForm}
-                >
+                <button type="button" className="btn btn-secondary px-4" onClick={resetForm}>
                   Annuler
                 </button>
               )}
+              
             </div>
           </div>
         </form>
@@ -201,7 +230,10 @@ const Paiement = () => {
                 <th>Facture</th>
                 <th>Date</th>
                 <th>Type</th>
-                <th>Montant</th>
+                <th>Total</th>
+                <th>Montant paiement</th>
+                <th>Payé</th>
+                <th>Restant</th>
                 <th>Statut</th>
                 <th className="text-center">Actions</th>
               </tr>
@@ -209,21 +241,25 @@ const Paiement = () => {
             <tbody>
               {paiements.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center text-muted">
-                    Aucun paiement trouvé.
-                  </td>
+                  <td colSpan="9" className="text-center text-muted">Aucun paiement trouvé.</td>
                 </tr>
               ) : (
                 paiements.map((p) => (
                   <tr key={p._id}>
-                    <td><i className="bi bi-receipt text-success me-1"></i> {p.numeroFacture}</td>
+                    <td>{p.facture?.numeroFacture || "–"}</td>
                     <td>{p.datePaiement ? new Date(p.datePaiement).toLocaleDateString() : "-"}</td>
                     <td>{p.typePaiement || "-"}</td>
+                    <td>{p.facture?.total || 0} TND</td>
                     <td>{p.montant} TND</td>
+                    <td>{p.facture?.montantPaye || 0} TND</td>
+                    <td>{p.facture?.montantRestant || 0} TND</td>
                     <td>
-                      <span className={`badge ${p.statut ? "bg-success" : "bg-danger"}`}>
-                        <i className={`bi ${p.statut ? "bi-check-circle-fill" : "bi-x-circle-fill"} me-1`}></i>
-                        {p.statut ? "Payé" : "Non payé"}
+                      <span className={`badge ${
+                        p.facture?.statut === "payé" ? "bg-success" :
+                        p.facture?.statut === "partiellement payé" ? "bg-warning text-dark" :
+                        "bg-danger"
+                      }`}>
+                        {p.facture?.statut || "–"}
                       </span>
                     </td>
                     <td className="text-center">
