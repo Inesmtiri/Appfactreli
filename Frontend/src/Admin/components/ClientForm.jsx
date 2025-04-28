@@ -31,8 +31,18 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formClient.nom || !formClient.prenom || !formClient.email) {
-      alert("Nom, prénom et email sont obligatoires !");
+    const { nom, prenom, email, societe, telephone, adresse } = formClient;
+
+    // ✅ Vérifier champs vides
+    if (!nom || !prenom || !email || !societe || !telephone || !adresse) {
+      alert("⚠️ Tous les champs sont obligatoires.");
+      return;
+    }
+
+    // ✅ Vérifier numéro de téléphone (exactement 8 chiffres)
+    const phoneRegex = /^[0-9]{8}$/;
+    if (!phoneRegex.test(telephone)) {
+      alert("📞 Le numéro de téléphone doit contenir exactement 8 chiffres.");
       return;
     }
 
@@ -49,11 +59,10 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
 
         const response = await axios.post("http://localhost:3001/api/clients", clientData);
         if (onAddClient) onAddClient(response.data);
-
-        // 🛡️ Affichage simple du mot de passe
         alert(`✅ Client créé avec succès !\n\n🛡️ Mot de passe généré : ${motDePasseGenere}`);
       }
 
+      // ✅ Réinitialisation + fermeture
       setFormClient({
         nom: "",
         prenom: "",
@@ -92,24 +101,17 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
                 onChange={handleChange}
                 placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                 style={inputStyle}
-                required={["nom", "prenom", "email"].includes(field)}
+                required
               />
             </Form.Group>
           ))}
 
           <div className="d-flex justify-content-between mt-4">
-            <Button
-              type="button"
-              onClick={onCancel}
-              style={cancelButtonStyle}
-            >
+            <Button type="button" onClick={onCancel} style={cancelButtonStyle}>
               Annuler
             </Button>
 
-            <Button
-              type="submit"
-              style={submitButtonStyle}
-            >
+            <Button type="submit" style={submitButtonStyle}>
               {clientToEdit ? "Modifier" : "Créer"}
             </Button>
           </div>

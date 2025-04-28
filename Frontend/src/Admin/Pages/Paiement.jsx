@@ -10,12 +10,15 @@ const Paiement = () => {
   const [factures, setFactures] = useState([]);
   const [formData, setFormData] = useState({
     facture: "",
-    datePaiement: "",
+    datePaiement: new Date().toISOString().split("T")[0],
     typePaiement: "en ligne",
     montant: "",
   });
   const [editId, setEditId] = useState(null);
   const [montantRestant, setMontantRestant] = useState(0);
+
+  const [query, setQuery] = useState(""); // champ recherche
+  const [suggestions, setSuggestions] = useState([]);
 
   const fetchPaiements = async () => {
     try {
@@ -40,11 +43,23 @@ const Paiement = () => {
     fetchFactures();
   }, []);
 
+  useEffect(() => {
+    if (query.length > 0) {
+      const results = factures.filter((f) =>
+        `${f.numeroFacture} ${f.nomEntreprise} ${f.total}`
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      );
+      setSuggestions(results);
+    } else {
+      setSuggestions([]);
+    }
+  }, [query, factures]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // ⚠️ Si la facture change, on met à jour le montant restant
     if (name === "facture") {
       const selected = factures.find((f) => f._id === value);
       setMontantRestant(selected ? selected.montantRestant : 0);
@@ -92,14 +107,18 @@ const Paiement = () => {
   };
 
   const handleEdit = (paiement) => {
+    const factureObject = factures.find(f => f._id === (paiement.facture?._id || paiement.facture));
+
     setEditId(paiement._id);
     setFormData({
       facture: paiement.facture?._id || paiement.facture,
-      datePaiement: paiement.datePaiement?.slice(0, 10) || "",
+      datePaiement: paiement.datePaiement?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       typePaiement: paiement.typePaiement || "en ligne",
       montant: paiement.montant,
     });
-    setMontantRestant(paiement.facture?.montantRestant || 0);
+
+    setQuery(`${factureObject?.numeroFacture} - ${factureObject?.nomEntreprise} - ${factureObject?.total} TND`);
+    setMontantRestant(factureObject?.montantRestant || 0);
   };
 
   const resetForm = () => {
@@ -109,28 +128,13 @@ const Paiement = () => {
       typePaiement: "en ligne",
       montant: "",
     });
+    setQuery("");
     setEditId(null);
     setMontantRestant(0);
   };
 
-  const handlePaiementSuivant = () => {
-    const factureNonPayee = factures.find((f) => f.statut !== "payé");
-    if (factureNonPayee) {
-      setFormData({
-        facture: factureNonPayee._id,
-        datePaiement: new Date().toISOString().slice(0, 10),
-        typePaiement: "en ligne",
-        montant: factureNonPayee.montantRestant,
-      });
-      setMontantRestant(factureNonPayee.montantRestant);
-    } else {
-      alert("🎉 Toutes les factures sont réglées !");
-    }
-  };
-
   return (
     <div className="container py-4">
-      {/* Formulaire */}
       <div className="p-4 bg-white rounded shadow-sm mb-4 mx-auto" style={{ maxWidth: "1000px" }}>
         <h5 className="mb-4 fw-bold text-dark">
           <i className="bi bi-plus-circle me-2"></i>
@@ -138,22 +142,35 @@ const Paiement = () => {
         </h5>
 
         <form onSubmit={handleAddOrEditPaiement} className="d-flex flex-wrap align-items-end gap-3">
-          <div className="flex-grow-1">
+          <div className="flex-grow-1 position-relative">
             <label className="form-label">Facture</label>
-            <select
-              name="facture"
-              value={formData.facture}
-              onChange={handleChange}
-              className="form-select"
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Rechercher une facture"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               required
-            >
-              <option value="">-- Choisir une facture --</option>
-              {factures.map((f) => (
-                <option key={f._id} value={f._id}>
-                  {f.numeroFacture} - {f.nomEntreprise || "Client"} - {f.total} TND
-                </option>
-              ))}
-            </select>
+            />
+            {suggestions.length > 0 && (
+              <ul className="list-group position-absolute w-100 z-3">
+                {suggestions.map((facture) => (
+                  <li
+                    key={facture._id}
+                    className="list-group-item list-group-item-action"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      setQuery(`${facture.numeroFacture} - ${facture.nomEntreprise} - ${facture.total} TND`);
+                      setFormData({ ...formData, facture: facture._id });
+                      setMontantRestant(facture.montantRestant);
+                      setSuggestions([]);
+                    }}
+                  >
+                    {facture.numeroFacture} - {facture.nomEntreprise} - {facture.total} TND
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="flex-grow-1">
@@ -164,6 +181,8 @@ const Paiement = () => {
               value={formData.datePaiement}
               onChange={handleChange}
               className="form-control"
+              max={new Date().toISOString().split("T")[0]}
+              required
             />
           </div>
 
@@ -210,7 +229,6 @@ const Paiement = () => {
                   Annuler
                 </button>
               )}
-              
             </div>
           </div>
         </form>
