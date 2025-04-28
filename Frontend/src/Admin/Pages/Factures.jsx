@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FaTrash, FaEdit } from "react-icons/fa";
 import axios from "axios";
+import {
+  Button,
+  Card,
+  Container,
+  Row,
+  Col,
+  Table
+} from "react-bootstrap";
+import { FaFileAlt, FaTrash, FaPen } from "react-icons/fa";
 import FactureForm from "../components/Facture/FactureForm";
 
 const FacturePage = () => {
@@ -9,26 +17,46 @@ const FacturePage = () => {
   const [editData, setEditData] = useState(null);
 
   useEffect(() => {
-    fetchFactures();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [facturesRes, paiementsRes] = await Promise.all([
+          axios.get("/api/factures"),
+          axios.get("/api/paiements"),
+        ]);
 
-  const fetchFactures = async () => {
-    try {
-      const res = await axios.get("/api/factures");
-      setFactureList(res.data);
-    } catch (err) {
-      console.error("Erreur chargement factures :", err.message);
-    }
-  };
+        const paiements = paiementsRes.data;
+
+        const facturesAvecStatut = facturesRes.data.map((facture) => {
+          const paiementsFacture = paiements.filter(
+            (p) => p.facture === facture._id
+          );
+          const montantPayé = paiementsFacture.reduce((s, p) => s + p.montant, 0);
+          let statut = "non payé";
+          if (montantPayé >= facture.total) statut = "payé";
+          else if (montantPayé > 0) statut = "partiellement payé";
+
+          return { ...facture, statut };
+        });
+
+        setFactureList(facturesAvecStatut);
+      } catch (err) {
+        console.error("❌ Erreur chargement données :", err.message);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleAddFacture = async (facture) => {
     try {
       if (editData) {
         const res = await axios.put(`/api/factures/${editData._id}`, facture);
-        setFactureList(prev => prev.map(f => f._id === editData._id ? res.data : f));
+        setFactureList((prev) =>
+          prev.map((f) => (f._id === editData._id ? res.data : f))
+        );
       } else {
         const res = await axios.post("/api/factures", facture);
-        setFactureList(prev => [...prev, res.data]);
+        setFactureList((prev) => [...prev, res.data]);
       }
       setShowForm(false);
       setEditData(null);
@@ -38,86 +66,123 @@ const FacturePage = () => {
   };
 
   const handleDeleteFacture = async (id) => {
-    try {
-      await axios.delete(`/api/factures/${id}`);
-      setFactureList(prev => prev.filter(f => f._id !== id));
-    } catch (err) {
-      console.error("Erreur suppression facture :", err.message);
-    }
-  };
-
-  const handleToggleStatut = async (id, statutActuel) => {
-    try {
-      const nouveauStatut = statutActuel === "payé" ? "non payé" : "payé";
-      await axios.put(`/api/factures/${id}`, { statut: nouveauStatut });
-      const updated = factureList.map(f =>
-        f._id === id ? { ...f, statut: nouveauStatut } : f
-      );
-      setFactureList(updated);
-    } catch (err) {
-      console.error("Erreur statut :", err.message);
+    if (window.confirm("Supprimer cette facture ?")) {
+      try {
+        await axios.delete(`/api/factures/${id}`);
+        setFactureList((prev) => prev.filter((f) => f._id !== id));
+      } catch (err) {
+        console.error("Erreur suppression facture :", err.message);
+      }
     }
   };
 
   const handleViewFacture = (facture) => {
     const clientNom = facture.client?.nom || facture.client?.societe || facture.client;
+    const logoURL = facture.logo
+      ? typeof facture.logo === "string"
+        ? `/uploads/${facture.logo}`
+        : URL.createObjectURL(facture.logo)
+      : "";
+
+    const remise = facture.remise || 0;
+    const subtotal = facture.subtotal || 0;
+    const remiseMontant = subtotal * (remise / 100);
+    const tax = facture.tax || 0;
+    const total = facture.total || subtotal - remiseMontant + tax;
+    const tvaRate = subtotal ? ((tax / (subtotal - remiseMontant)) * 100).toFixed(0) : 19;
+
     const factureHTML = `
-      <html><head><title>Facture ${facture.numeroFacture}</title>
-      <style>
-        body { font-family: Arial; margin: 40px; }
-        h1 { text-align: center; color: #167DB8; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        .totals { text-align: right; margin-top: 20px; }
-      </style>
-      </head><body>
-        <h1>${facture.nomEntreprise || "Nom Entreprise"}</h1>
-        <p><strong>Téléphone:</strong> ${facture.telephone || "-"}</p>
-        <p><strong>Client:</strong> ${clientNom}</p>
-        <p><strong>Date:</strong> ${facture.date?.slice(0, 10) || "-"}</p>
-        <p><strong>Numéro:</strong> ${facture.numeroFacture}</p>
-        <p><strong>Référence:</strong> ${facture.reference}</p>
-
-        <table><thead><tr>
-          <th>Description</th><th>Quantité</th><th>Prix U</th><th>Total</th>
-        </tr></thead><tbody>
-        ${facture.lignes.map(l => `
-          <tr>
-            <td>${l.designation}</td>
-            <td>${l.quantite}</td>
-            <td>${l.prixUnitaire.toFixed(3)} TND</td>
-            <td>${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
-          </tr>`).join("")}
-        </tbody></table>
-
-        <div class="totals">
-          <p><strong>Subtotal:</strong> ${facture.subtotal?.toFixed(3)} TND</p>
-          <p><strong>Tax:</strong> ${facture.tax?.toFixed(3)} TND</p>
-          <h3><strong>Total:</strong> ${facture.total?.toFixed(3)} TND</h3>
-        </div>
-      </body></html>
+      <html>
+        <head>
+          <title>Facture ${facture.numeroFacture}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 60px; color: #2f3e4d; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+            .header img { max-width: 140px; max-height: 100px; }
+            .section-title { font-weight: 600; font-size: 14px; color: #6b7280; }
+            .client-info, .facture-info { font-size: 16px; line-height: 1.6; }
+            .info-blocks { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 30px; }
+            th { background-color: #f2f4f6; color: #4b5563; padding: 12px; border-bottom: 2px solid #e5e7eb; text-align: left; }
+            td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+            .totals { margin-top: 40px; text-align: right; font-size: 16px; }
+            .totals p { margin: 5px 0; }
+            .total-amount { font-size: 20px; font-weight: bold; }
+            .footer { margin-top: 60px; text-align: center; color: #9ca3af; font-size: 13px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="section-title">Client</div>
+              <div class="client-info">
+                ${clientNom || "Client"}<br/>
+                ${facture.nomEntreprise || ""}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <strong>Ganesh Coding</strong><br/>
+              Beb bhar<br/>
+              251403625
+            </div>
+            ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
+          </div>
+          <div class="info-blocks">
+            <div class="facture-info"><div class="section-title">Date</div>${facture.date?.slice(0, 10) || "-"}</div>
+            <div class="facture-info"><div class="section-title">N° Facture</div>${facture.numeroFacture}</div>
+            <div class="facture-info"><div class="section-title">Référence</div>${facture.reference}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Désignation</th>
+                <th style="text-align:center;">PU</th>
+                <th style="text-align:center;">Quantité</th>
+                <th style="text-align:right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${facture.lignes.map(l => `
+                <tr>
+                  <td>${l.designation}</td>
+                  <td style="text-align:center;">${l.prixUnitaire.toFixed(3)} TND</td>
+                  <td style="text-align:center;">${l.quantite}</td>
+                  <td style="text-align:right;">${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>
+          <div class="totals">
+            <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
+            <p><strong>Remise (${remise}%):</strong> ${remiseMontant.toFixed(3)} TND</p>
+            <p><strong>TVA (${tvaRate}%):</strong> ${tax.toFixed(3)} TND</p>
+            <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
+          </div>
+          <div class="footer">Merci pour votre confiance – Facterli</div>
+        </body>
+      </html>
     `;
 
-    const win = window.open("", "_blank", "width=800,height=600");
+    const win = window.open("", "_blank", "width=900,height=700");
     win.document.write(factureHTML);
     win.document.close();
     win.print();
   };
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-end mb-4">
-        <button
-          className="btn fw-bold"
-          style={{ backgroundColor: "#23BD15", color: "white" }}
-          onClick={() => {
-            setEditData(null);
-            setShowForm(true);
-          }}
-        >
-          Ajouter
-        </button>
-      </div>
+    <Container className="mt-4">
+      <Row className="mb-4 justify-content-end">
+        <Col xs="auto">
+          <Button
+            style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
+            onClick={() => {
+              setShowForm(true);
+              setEditData(null);
+            }}
+          >
+            Ajouter
+          </Button>
+        </Col>
+      </Row>
 
       {showForm && (
         <FactureForm
@@ -130,57 +195,84 @@ const FacturePage = () => {
         />
       )}
 
-      {!showForm && (
-        <div className="card shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
-          <h6 className="mb-3 fst-italic">• Mes factures :</h6>
-          {factureList.length === 0 ? (
-            <p className="text-center text-muted">Aucune facture pour l’instant.</p>
-          ) : (
-            <div className="d-flex flex-column gap-3">
+      <Card className="shadow-lg p-4 mx-auto border-0 rounded-4" style={{ maxWidth: "1200px" }}>
+        <h5 className="mb-4 fw-semibold text-primary">Liste des factures</h5>
+        {factureList.length > 0 ? (
+          <Table responsive className="align-middle text-center table-striped">
+            <thead className="bg-light text-muted">
+              <tr>
+                <th className="text-start">Client / N°</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {factureList.map((facture) => (
-                <div
-                  key={facture._id}
-                  className="d-flex justify-content-between align-items-center border rounded px-4 py-3 bg-light"
-                  onClick={() => handleViewFacture(facture)}
-                >
-                  <div>
-                    <span className="fw-semibold fst-italic">
-                      {(facture.client?.nom || facture.client?.societe || "Client")} - {facture.numeroFacture}
-                    </span>
-                    
-                  </div>
+                <tr key={facture._id} className="align-middle">
+                  <td className="text-start">
+                    <div className="fw-semibold">{facture.client?.nom || facture.client?.societe || "Client"}</div>
+                    <small className="text-muted">{facture.numeroFacture}</small>
+                  </td>
+                  <td>{facture.date?.slice(0, 10)}</td>
+                  <td>{facture.total?.toFixed(3)} TND</td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <Button variant="outline-primary" size="sm" onClick={() => handleViewFacture(facture)}>
+                        <FaFileAlt />
+                      </Button>
+                      <Button
+  variant="outline-success"
+  size="sm"
+  onClick={() => {
+    const lignesFormatees = facture.lignes.map((l) => ({
+      itemId: l.itemId,
+      type: l.type,
+      designation: l.designation,
+      quantite: l.quantite,
+      prixUnitaire: l.prixUnitaire,
+      inputValue: `${l.designation} - ${l.prixUnitaire}`
+    }));
 
-                  <div className="d-flex gap-2">
-                    
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditData(facture);
-                        setShowForm(true);
-                      }}
-                    >
-                      <FaEdit />
-                    </button>
+    const clientInput =
+      typeof facture.client === "object"
+        ? `${facture.client.nom} ${facture.client.prenom} - ${facture.client.societe || ""}`
+        : "";
 
-                    <button
-                      className="btn btn-link text-dark p-0"
-                      title="Supprimer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteFacture(facture._id);
-                      }}
-                    >
-                      <FaTrash size={16} />
-                    </button>
-                  </div>
-                </div>
+    const clientId =
+      typeof facture.client === "object"
+        ? facture.client._id
+        : facture.client;
+
+    setEditData({
+      ...facture,
+      client: clientId,
+      clientInput,
+      lignes: lignesFormatees,
+      numeroFacture: facture.numeroFacture || "",
+      logo: facture.logo || null // ✅ ici on passe le logo dans le formulaire
+    });
+
+    setShowForm(true);
+  }}
+>
+  <FaPen />
+</Button>
+
+                      <Button variant="outline-danger" size="sm" onClick={() => handleDeleteFacture(facture._id)}>
+                        <FaTrash />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+            </tbody>
+          </Table>
+        ) : (
+          <p className="text-center text-muted">Aucune facture enregistrée pour l’instant.</p>
+        )}
+      </Card>
+    </Container>
   );
 };
 

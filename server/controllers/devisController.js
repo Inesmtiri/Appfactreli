@@ -1,5 +1,4 @@
 import Devis from "../models/devis.js";
-
 // ✅ Ajouter un devis
 export const ajouterDevis = async (req, res) => {
   try {
@@ -146,10 +145,22 @@ export const refuseDevis = async (req, res) => {
 // ✅ Lister les devis d'un client (interface client)
 export const getDevisByClient = async (req, res) => {
   try {
-    const devis = await Devis.find({ clientId: req.params.clientId });
+    const { clientId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ error: "ID client invalide." });
+    }
+
+    const devis = await Devis.find({ clientId });
     res.json(devis);
-  } catch (error) {
-    console.error("Erreur chargement devis client :", error);
-    res.status(500).json({ message: "Erreur chargement devis client" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération des devis." });
   }
 };
+async function getNextDevisNumber() {
+  const counter = await Counter.findOneAndUpdate(
+    { name: "devis" },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  return counter.seq.toString().padStart(6, "0");
+}

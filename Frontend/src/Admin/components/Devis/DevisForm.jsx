@@ -1,62 +1,104 @@
 import React, { useEffect, useState, useRef } from "react";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaPrint } from "react-icons/fa";
+
 import axios from "axios";
+import ClientForm from "../ClientForm";
 
 const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const [clients, setClients] = useState([]);
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
-
   const [clientId, setClientId] = useState(editData?.clientId || "");
-  const [clientName, setClientName] = useState(editData?.client || "");
-  const [nomEntreprise, setNomEntreprise] = useState(editData?.nomEntreprise || "");
-  const [telephone, setTelephone] = useState(editData?.telephone || "");
+  const [clientInput, setClientInput] = useState("");
+  const [nomEntreprise, setNomEntreprise] = useState("");
+  const [adresse] = useState("beb bhar");
+  const [telephone, setTelephone] = useState("");
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
-  const [numeroDevis, setNumeroDevis] = useState(editData?.numeroDevis || "000001");
+  const [numeroDevis, setNumeroDevis] = useState("");
   const [reference, setReference] = useState(editData?.reference || "");
-
-  const [lignes, setLignes] = useState(
-    editData?.lignes?.map((l) => ({
-      itemId: l.itemId || "",
-      type: l.type || "",
-      quantite: l.quantite || 1,
-      prixUnitaire: l.prixUnitaire || 0,
-      designation: l.designation || "",
-    })) || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
-  );
-
+  const [logo, setLogo] = useState(null);
+  const [tva, setTva] = useState(19);
+  const [discount, setDiscount] = useState(0);
+  const [showClientForm, setShowClientForm] = useState(false);
   const printRef = useRef();
+  const selectedClient = clients.find(c => c._id === clientId);
+  const [lignes, setLignes] = useState(
+    editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
+  );
+  // Ajoute ce useEffect au bon endroit après useState
+  useEffect(() => {
+    if (editData && editData.lignes) {
+      setNomEntreprise(editData.nomEntreprise || "");
+      setTelephone(editData.telephone || "");
+      setClientId(editData.clientId || "");
+      setClientInput(editData.client || "");
+      setNumeroDevis(editData.numeroDevis || "");
+      setReference(editData.reference || "");
+      setDiscount(editData.discount || 0);
+      setTva(editData.tax && editData.subtotal ? (editData.tax * 100) / editData.subtotal : 19);
+
+      const lignesModifiees = editData.lignes.map((l) => ({
+        ...l,
+        inputValue: `${l.designation} - ${l.prixUnitaire}`,
+      }));
+      setLignes(lignesModifiees);
+
+      if (editData?.logo) {
+        setLogo(editData.logo);
+      }
+      
+    } else {
+      // Cas d'ajout : initialisation avec une ligne vide si pas de devis à éditer
+      setLignes([{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "", inputValue: "" }]);
+    }
+  }, [editData]);
+
 
   useEffect(() => {
-    axios.get("/api/clients").then(res => setClients(res.data));
-    axios.get("/api/produits").then(res => setProduits(res.data));
-    axios.get("/api/services").then(res => setServices(res.data));
+    fetchClients();
+    axios.get("/api/produits").then((res) => setProduits(res.data));
+    axios.get("/api/services").then((res) => setServices(res.data));
+
+    if (!editData) {
+      generateNumeroDevis(); // Appelle uniquement en mode création
+    }
   }, []);
 
-  useEffect(() => {
-    if (clientId) {
-      const selected = clients.find((c) => c._id === clientId);
-      if (selected) setClientName(`${selected.nom} ${selected.prenom}`);
-    }
-  }, [clientId, clients]);
+
+  const fetchClients = () => {
+    axios.get("/api/clients").then((res) => setClients(res.data));
+  };
+
+  const generateNumeroDevis = () => {
+    axios.get("/api/devis").then((res) => {
+      const numeros = res.data
+        .map((d) => parseInt(d.numeroDevis))
+        .filter((n) => !isNaN(n));
+      const max = Math.max(0, ...numeros);
+      const next = (max + 1).toString().padStart(6, "0");
+      setNumeroDevis(next);
+    });
+  };
+
 
   const options = [
-    ...produits.map((p) => ({ _id: p._id, type: "produit", nom: p.reference, prix: p.prixVente || 0 })),
-    ...services.map((s) => ({ _id: s._id, type: "service", nom: s.nom, prix: s.tarif || 0 })),
+    ...produits.map((p) => ({ _id: p._id, type: "produit", nom: p.reference, prix: p.prixVente })),
+    ...services.map((s) => ({ _id: s._id, type: "service", nom: s.nom, prix: s.tarif })),
   ];
 
   const handleSelectItem = (index, value) => {
-    const [type, id] = value.split("-");
-    const selected = options.find((item) => item._id === id && item.type === type);
+    const selected = options.find((item) => `${item.nom} - ${item.prix}` === value);
     const updated = [...lignes];
-    updated[index] = {
-      ...updated[index],
-      itemId: id,
-      type,
-      prixUnitaire: selected?.prix || 0,
-      designation: selected?.nom || "",
-    };
-    setLignes(updated);
+    if (selected) {
+      updated[index] = {
+        ...updated[index],
+        itemId: selected._id,
+        type: selected.type,
+        prixUnitaire: selected.prix,
+        designation: selected.nom,
+      };
+      setLignes(updated);
+    }
   };
 
   const handleChange = (index, field, value) => {
@@ -76,16 +118,18 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   };
 
   const subtotal = lignes.reduce((sum, l) => sum + l.quantite * l.prixUnitaire, 0);
-  const tax = subtotal * 0.19;
-  const total = subtotal + tax;
+  const discountAmount = subtotal * (discount / 100);
+  const tax = (subtotal - discountAmount) * (tva / 100);
+  const total = subtotal - discountAmount + tax;
 
   const handleSave = async () => {
     if (!clientId) return alert("Veuillez sélectionner un client.");
 
     const devis = {
       clientId,
-      client: clientName,
+      client: clients.find(c => c._id === clientId)?.nom + " " + clients.find(c => c._id === clientId)?.prenom,
       nomEntreprise,
+      adresse,
       telephone,
       date,
       numeroDevis,
@@ -94,65 +138,295 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
       subtotal,
       tax,
       total,
-      statut: "envoyé",
+      discount,
+      statut: "en attente",
+      logo,
     };
 
     try {
-      let res;
-      if (editData?._id) {
-        res = await axios.put(`/api/devis/${editData._id}`, devis);
-      } else {
-        res = await axios.post("/api/devis", devis);
-      }
+      const res = editData?._id
+        ? await axios.put(`/api/devis/${editData._id}`, devis)
+        : await axios.post("/api/devis", devis);
 
+      // ✅ Appelle uniquement le parent avec le devis créé ou mis à jour
       onAddDevis(res.data);
-      alert(`✅ Devis ${editData ? "mis à jour" : "enregistré et envoyé"} avec succès !`);
       onCancel();
     } catch (err) {
-      console.error("Erreur :", err.message);
-      alert("❌ Erreur lors de l’envoi du devis");
+      alert("Erreur lors de l'enregistrement.");
+      console.error(err.message);
     }
   };
 
+
+  const handleClientCreated = (newClient) => {
+    fetchClients();
+    setClientId(newClient._id);
+    setShowClientForm(false);
+  };
+  const handlePrint = () => {
+    const logoURL = logo
+      ? typeof logo === "string"
+        ? `/uploads/${logo}`
+        : URL.createObjectURL(logo)
+      : "";
+  
+    const html = `
+    <html>
+      <head>
+        <title>Devis ${numeroDevis}</title>
+        <style>
+          body {
+            font-family: 'Arial', sans-serif;
+            margin: 60px;
+            color: #2f3e4d;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+          }
+          .header img {
+            max-width: 140px;
+            max-height: 100px;
+          }
+          .section-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+          }
+          .info, .devis-info {
+            font-size: 16px;
+            line-height: 1.6;
+          }
+          .info-blocks {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            font-size: 15px;
+          }
+          th {
+            background-color: #f2f4f6;
+            color: #4b5563;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+          }
+          td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .totals {
+            margin-top: 40px;
+            text-align: right;
+            font-size: 16px;
+          }
+          .totals p {
+            margin: 5px 0;
+          }
+          .total-amount {
+            font-size: 20px;
+            font-weight: bold;
+          }
+          .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="section-title">Client</div>
+            <div class="info">
+              ${clientInput || "Nom du client"}<br/>
+              ${nomEntreprise || ""}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <strong>Ganesh Coding</strong><br/>
+            25140235<br/>
+            Beb bhar
+          </div>
+          ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
+        </div>
+  
+        <div class="info-blocks">
+          <div class="devis-info">
+            <div class="section-title">Date du devis</div>
+            ${date}
+          </div>
+          <div class="devis-info">
+            <div class="section-title">Numéro du devis</div>
+            ${numeroDevis}
+          </div>
+        </div>
+  
+        <table>
+          <thead>
+            <tr>
+              <th>Désignation</th>
+              <th style="text-align:center;">Prix unitaire</th>
+              <th style="text-align:center;">Quantité</th>
+              <th style="text-align:right;">Total ligne</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lignes.map((ligne) => `
+              <tr>
+                <td>${ligne.designation}</td>
+                <td style="text-align:center;">${ligne.prixUnitaire.toFixed(3)} TND</td>
+                <td style="text-align:center;">${ligne.quantite}</td>
+                <td style="text-align:right;">${(ligne.quantite * ligne.prixUnitaire).toFixed(3)} TND</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+  
+        <div class="totals">
+          <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
+          <p><strong>Remise (${discount}%):</strong> ${discountAmount.toFixed(3)} TND</p>
+          <p><strong>TVA (${tva}%):</strong> ${tax.toFixed(3)} TND</p>
+          <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
+        </div>
+  
+        <div class="footer">
+          Merci pour votre confiance – Facterli
+        </div>
+      </body>
+    </html>
+    `;
+  
+    const printWindow = window.open("", "_blank", "width=900,height=600");
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+  
+
+  const handleClientInput = (e) => {
+    const value = e.target.value;
+    setClientInput(value);
+    const matchedClient = clients.find(
+      (c) => `${c.nom} ${c.prenom} - ${c.societe}`.toLowerCase() === value.toLowerCase()
+    );
+    if (matchedClient) {
+      setClientId(matchedClient._id);
+    } else {
+      setClientId(""); // Clear si invalide
+    }
+  };
+
+
   return (
-    <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingTop: "50px" }}>
+    <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingTop: 50 }}>
       <div className="modal-dialog modal-xl">
         <div className="modal-content p-4">
-          <div className="modal-body">
+          <div className="modal-body" ref={printRef}>
+            <h4 className="fst-italic mb-4">Nouveau devis</h4>
             <div className="row">
-              <div className="col-md-8" ref={printRef}>
-                <h4 className="fst-italic mb-4">{editData ? "Modifier devis" : "Nouveau devis"}</h4>
+              {/* ✅ Contenu devis 75% */}
+              <div className="col-md-9">
+                {/* Logo + entreprise */}
+                <div className="row mb-3">
+                  <div className="col-md-3">
+                    <div
+                      className="border rounded d-flex align-items-center justify-content-center position-relative"
+                      style={{ height: "100px", borderStyle: "dashed", overflow: "hidden" }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setLogo(e.target.files[0])}
+                        style={{
+                          opacity: 0,
+                          position: "absolute",
+                          width: "100%",
+                          height: "100%",
+                          cursor: "pointer",
+                        }}
+                      />
+                      {logo ? (
+                        <img
+                          src={
+                            typeof logo === "string"
+                              ? `/uploads/${logo}`
+                              : URL.createObjectURL(logo)
+                          }
+                          alt="Logo"
+                          style={{
+                            maxHeight: "100%",
+                            maxWidth: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                      ) : (
+                        <span className="text-center text-muted small">
+                          Drag logo here<br />
+                          or select a file
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
+
+                  <div className="col-md-5">
+                    <input className="form-control mb-2" placeholder="Entreprise" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
+                    <input className="form-control" placeholder="Téléphone" value={telephone}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d{0,8}$/.test(val)) setTelephone(val);
+                      }}
+                      onBlur={() => {
+                        if (telephone.length !== 8) {
+                          alert("Téléphone invalide");
+                          setTelephone("");
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-4 text-end small">
+                    <strong>Ganesh Coding</strong><br />
+                    25140235<br />
+                    Beb bhar
+                  </div>
+                </div>
+
+                {/* Client */}
                 <div className="mb-3">
                   <label className="fw-semibold">Client</label>
-                  <select className="form-select" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-                    <option value="">-- Sélectionner un client --</option>
+                  <input
+                    type="text"
+                    list="clients"
+                    className="form-control"
+                    placeholder="Rechercher ou sélectionner un client..."
+                    value={clientInput}
+                    onChange={handleClientInput}
+                  />
+                  <datalist id="clients">
                     {clients.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.nom} {c.prenom} - {c.societe}
-                      </option>
+                      <option key={c._id} value={`${c.nom} ${c.prenom} - ${c.societe}`} />
                     ))}
-                  </select>
+                  </datalist>
+                  <button className="btn btn-link p-0" onClick={() => setShowClientForm(true)}>+ Créer un client</button>
                 </div>
 
-                <input className="form-control mb-2" placeholder="Entreprise" value={nomEntreprise} onChange={(e) => setNomEntreprise(e.target.value)} />
-                <input className="form-control mb-3" placeholder="Téléphone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
-
+                {/* Infos devis */}
                 <div className="row mb-3">
-                  <div className="col">
-                    <label>Date</label>
-                    <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
-                  </div>
-                  <div className="col">
-                    <label>Numéro</label>
-                    <input type="text" className="form-control" value={numeroDevis} onChange={(e) => setNumeroDevis(e.target.value)} />
-                  </div>
-                  <div className="col">
-                    <label>Référence</label>
-                    <input type="text" className="form-control" value={reference} onChange={(e) => setReference(e.target.value)} />
-                  </div>
+                  <div className="col"><label>Date</label><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+                  <div className="col"><label>Numéro</label><input type="text" className="form-control" value={numeroDevis} disabled /></div>
+                  <div className="col"><label>Référence</label><input type="text" className="form-control" value={reference} onChange={(e) => setReference(e.target.value)} /></div>
+                  <div className="col-2"><label>TVA (%)</label><input type="number" className="form-control" value={tva} onChange={(e) => setTva(parseFloat(e.target.value))} /></div>
                 </div>
 
+                {/* Lignes */}
                 <div className="table-responsive mb-3">
                   <table className="table table-bordered">
                     <thead>
@@ -165,22 +439,46 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {lignes.map((ligne, index) => (
-                        <tr key={index}>
+                      {lignes.map((ligne, i) => (
+                        <tr key={i}>
                           <td>
-                            <select className="form-select" value={ligne.type && ligne.itemId ? `${ligne.type}-${ligne.itemId}` : ""} onChange={(e) => handleSelectItem(index, e.target.value)}>
-                              <option value="">-- Choisir --</option>
-                              {options.map((item) => (
-                                <option key={item._id} value={`${item.type}-${item._id}`}>
-                                  [{item.type}] {item.nom} - {item.prix.toFixed(3)} TND
-                                </option>
+                            <input
+                              className="form-control"
+                              list={`options-${i}`}
+                              placeholder="Produit ou service..."
+                              value={lignes[i].inputValue || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const selected = options.find((opt) => `${opt.nom} - ${opt.prix}` === value);
+
+                                const updated = [...lignes];
+                                if (selected) {
+                                  updated[i] = {
+                                    ...updated[i],
+                                    itemId: selected._id,
+                                    type: selected.type,
+                                    prixUnitaire: selected.prix,
+                                    designation: selected.nom,
+                                    inputValue: value,
+                                  };
+                                } else {
+                                  updated[i].inputValue = value;
+                                }
+                                setLignes(updated);
+                              }}
+                            />
+                            <datalist id={`options-${i}`}>
+                              {options.map((opt) => (
+                                <option key={opt._id} value={`${opt.nom} - ${opt.prix}`} />
                               ))}
-                            </select>
+                            </datalist>
                           </td>
-                          <td><input type="number" className="form-control" value={ligne.quantite} onChange={(e) => handleChange(index, "quantite", e.target.value)} /></td>
-                          <td><input type="number" className="form-control" value={ligne.prixUnitaire} onChange={(e) => handleChange(index, "prixUnitaire", e.target.value)} /></td>
+
+
+                          <td><input type="number" className="form-control" value={ligne.quantite} onChange={(e) => handleChange(i, "quantite", e.target.value)} /></td>
+                          <td><input type="number" className="form-control" value={ligne.prixUnitaire} onChange={(e) => handleChange(i, "prixUnitaire", e.target.value)} /></td>
                           <td>{(ligne.quantite * ligne.prixUnitaire).toFixed(3)} TND</td>
-                          <td><button className="btn btn-link text-danger" onClick={() => supprimerLigne(index)}><FaTrash /></button></td>
+                          <td><button className="btn btn-link text-danger" onClick={() => supprimerLigne(i)}><FaTrash /></button></td>
                         </tr>
                       ))}
                     </tbody>
@@ -188,21 +486,40 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                   <button className="btn btn-outline-primary" onClick={ajouterLigne}>+ Ajouter une ligne</button>
                 </div>
 
-                <div className="text-end">
-                  <p><strong>Subtotal:</strong> {subtotal.toFixed(3)} TND</p>
-                  <p><strong>Tax (19%):</strong> {tax.toFixed(3)} TND</p>
-                  <h5><strong>Total:</strong> {total.toFixed(3)} TND</h5>
+                {/* Remise & Totaux */}
+                <div className="row">
+                  <div className="col-md-4">
+                    <label>Remise (%)</label>
+                    <input type="number" className="form-control" value={discount} onChange={(e) => setDiscount(parseFloat(e.target.value))} />
+                  </div>
+                  <div className="col-md-8 text-end">
+                    <p><strong>Subtotal :</strong> {subtotal.toFixed(3)} TND</p>
+                    <p><strong>Remise ({discount}%):</strong> {discountAmount.toFixed(3)} TND</p>
+                    <p><strong>Tax ({tva}%):</strong> {tax.toFixed(3)} TND</p>
+                    <h5><strong>Total :</strong> {total.toFixed(3)} TND</h5>
+                  </div>
                 </div>
               </div>
 
-              {/* ✅ Actions */}
-              <div className="col-md-4 d-flex flex-column gap-3 align-items-start">
-                <button className={`btn ${editData ? "btn-warning" : "btn-vert"} w-100 fw-bold`} onClick={handleSave}>
+              {/* ✅ Boutons à droite */}
+              <div className="col-md-3 d-flex flex-column align-items-end justify-content-center gap-2">
+                <button
+                  className="btn w-75 fw-bold"
+                  style={{
+                    backgroundColor: editData ? "#ffc107" : "#23BD15",
+                    borderColor: editData ? "#ffc107" : "#23BD15",
+                    color: "#fff",
+                  }}
+                  onClick={handleSave}
+                >
                   {editData ? "Mettre à jour" : "Envoyer"}
                 </button>
-                <button className="btn btn-secondary w-100" onClick={onCancel}>Annuler</button>
+                <button className="btn btn-outline-dark w-75" onClick={handlePrint}><FaPrint className="me-2" /> Imprimer</button>
+                <button className="btn btn-secondary w-75" onClick={onCancel}>Annuler</button>
               </div>
             </div>
+
+            {showClientForm && <ClientForm onClose={() => setShowClientForm(false)} onSave={handleClientCreated} />}
           </div>
         </div>
       </div>

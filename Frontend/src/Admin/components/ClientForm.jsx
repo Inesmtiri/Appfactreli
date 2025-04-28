@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Form } from "react-bootstrap";
 import axios from "axios";
 
-const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => {
+const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
   const [formClient, setFormClient] = useState({
     nom: "",
     prenom: "",
@@ -38,19 +38,15 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
 
     try {
       if (clientToEdit) {
-        // 🔁 Mise à jour
         await axios.put(`http://localhost:3001/api/clients/${formClient._id}`, formClient);
         if (onUpdateClient) onUpdateClient(formClient);
         alert("✅ Client modifié avec succès !");
       } else {
-        // ➕ Création avec mot de passe généré
         const motDePasseGenere = generatePassword();
         const clientData = { ...formClient, motDePasse: motDePasseGenere };
 
         const response = await axios.post("http://localhost:3001/api/clients", clientData);
         if (onAddClient) onAddClient(response.data);
-
-        // 🛡️ Affichage simple du mot de passe
         alert(`✅ Client créé avec succès !\n\n🛡️ Mot de passe généré : ${motDePasseGenere}`);
       }
 
@@ -64,7 +60,7 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
         motDePasse: ""
       });
 
-      if (onCancel) onCancel();
+      if (onClose) onClose(); // ✅ ici le bon prop
     } catch (error) {
       if (error.response && error.response.status === 409) {
         alert("⚠️ Un client avec cet email existe déjà !");
@@ -100,7 +96,7 @@ const ClientForm = ({ onAddClient, onCancel, clientToEdit, onUpdateClient }) => 
           <div className="d-flex justify-content-between mt-4">
             <Button
               type="button"
-              onClick={onCancel}
+              onClick={onClose} // ✅ corrigé ici aussi
               style={cancelButtonStyle}
             >
               Annuler

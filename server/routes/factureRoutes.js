@@ -1,4 +1,6 @@
 import express from "express";
+import Facture from "../models/facture.js"; // ✅ tu avais oublié cette ligne
+
 import {
   ajouterFacture,
   getAllFactures,
@@ -10,7 +12,19 @@ import {
 const router = express.Router();
 
 // Ajouter une facture
-router.post("/", ajouterFacture);
+router.post("/", async (req, res) => {
+  try {
+    console.log("📥 Facture reçue :", req.body);
+    const facture = new Facture(req.body);
+    const saved = await facture.save();
+    res.status(201).json(saved);
+  } catch (error) {
+    console.error("❌ Erreur enregistrement facture :", error.message);
+    res.status(500).json({ message: "Erreur enregistrement facture" });
+  }
+});
+
+
 
 // Récupérer toutes les factures
 router.get("/", getAllFactures);

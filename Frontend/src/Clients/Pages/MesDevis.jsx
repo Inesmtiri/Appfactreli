@@ -9,37 +9,40 @@ const MesDevis = () => {
   const [devisList, setDevisList] = useState([]);
   const clientId = JSON.parse(localStorage.getItem("user"))?.id;
 
-  // Chargement des devis dès que le composant est monté
+  // Charger les devis du client
   useEffect(() => {
     const loadDevis = async () => {
-      const data = await fetchDevisClient(clientId);
-      console.log("📦 Devis récupérés : ", data); // Pour vérifier les données
-      setDevisList(data);
+      try {
+        const data = await fetchDevisClient(clientId);
+        const filtered = data.filter((devis) => devis.clientId === clientId);
+        setDevisList(filtered);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis :", error);
+      }
     };
-    loadDevis();
+
+    if (clientId) {
+      loadDevis();
+    }
   }, [clientId]);
 
-  // Accepter un devis
   const handleAccept = async (id) => {
     try {
-      console.log("🟢 Accepter devis avec id : ", id);
-      await acceptDevis(id);  // Appel à l'API pour accepter le devis
-      const updatedData = await fetchDevisClient(clientId); // Récupérer la liste mise à jour des devis
-      setDevisList(updatedData);  // Mettre à jour l'état avec les nouveaux devis
+      await acceptDevis(id);
+      const updated = await fetchDevisClient(clientId);
+      setDevisList(updated.filter((devis) => devis.clientId === clientId));
     } catch (error) {
-      console.error("Erreur lors de l'acceptation du devis :", error);
+      console.error("Erreur lors de l'acceptation :", error);
     }
   };
 
-  // Refuser un devis
   const handleRefuse = async (id) => {
     try {
-      console.log("🔴 Refuser devis avec id : ", id);
-      await refuseDevis(id);  // Appel à l'API pour refuser le devis
-      const updatedData = await fetchDevisClient(clientId); // Récupérer la liste mise à jour des devis
-      setDevisList(updatedData);  // Mettre à jour l'état avec les nouveaux devis
+      await refuseDevis(id);
+      const updated = await fetchDevisClient(clientId);
+      setDevisList(updated.filter((devis) => devis.clientId === clientId));
     } catch (error) {
-      console.error("Erreur lors du refus du devis :", error);
+      console.error("Erreur lors du refus :", error);
     }
   };
 
@@ -54,13 +57,10 @@ const MesDevis = () => {
             <div key={devis._id} className="col-md-4 mb-3">
               <div className="card p-3 shadow">
                 <h5>{devis.numeroDevis}</h5>
-                <p><b>Total :</b> {devis.total} DT</p>
+                <p><b>Total :</b> {devis.total?.toFixed(3)} DT</p>
                 <p><b>Date :</b> {devis.date?.slice(0, 10)}</p>
-                
 
-                {/* Affichage des boutons selon le statut */}
                 {devis.statut?.toLowerCase().trim() === "en attente" && (
-                  
                   <>
                     <button
                       className="btn btn-success me-2"

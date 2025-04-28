@@ -6,7 +6,7 @@ import {
   Container,
   Row,
   Col,
-  ListGroup,
+  Table,
   Badge,
 } from "react-bootstrap";
 import { FaFileAlt, FaTrash, FaPen } from "react-icons/fa";
@@ -16,8 +16,8 @@ const DevisPage = () => {
   const [devisList, setDevisList] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [devisToEdit, setDevisToEdit] = useState(null);
+  const [produitsServices, setProduitsServices] = useState([]);
 
-  // 🔄 Charger les devis
   const fetchDevis = async () => {
     try {
       const res = await axios.get("/api/devis");
@@ -27,11 +27,31 @@ const DevisPage = () => {
     }
   };
 
+  const fetchProduitsServices = async () => {
+    const [produitsRes, servicesRes] = await Promise.all([
+      axios.get("/api/produits"),
+      axios.get("/api/services"),
+    ]);
+    const produits = produitsRes.data.map((p) => ({
+      id: p._id,
+      nom: p.reference,
+      prix: p.prixVente,
+      type: "produit",
+    }));
+    const services = servicesRes.data.map((s) => ({
+      id: s._id,
+      nom: s.nom,
+      prix: s.tarif,
+      type: "service",
+    }));
+    setProduitsServices([...produits, ...services]);
+  };
+
   useEffect(() => {
     fetchDevis();
+    fetchProduitsServices();
   }, []);
 
-  // ✏️ Modifier un devis existant
   const updateDevis = async (id, updatedData) => {
     try {
       const res = await axios.put(`/api/devis/${id}`, updatedData);
@@ -43,14 +63,14 @@ const DevisPage = () => {
     }
   };
 
-  // ➕ Ajouter ou mettre à jour un devis
   const handleAddDevis = async (devis) => {
     try {
       if (devisToEdit) {
+        // ✅ Mise à jour locale après update
         await updateDevis(devisToEdit._id, devis);
       } else {
-        const res = await axios.post("/api/devis", devis);
-        setDevisList((prev) => [...prev, res.data]);
+        // ❌ NE PAS faire axios.post ici — c'est déjà fait dans DevisForm
+        setDevisList((prev) => [...prev, devis]); // `devis` = res.data reçu depuis onAddDevis
       }
       setShowForm(false);
       setDevisToEdit(null);
@@ -58,8 +78,8 @@ const DevisPage = () => {
       console.error("Erreur enregistrement devis:", err.message);
     }
   };
+  
 
-  // 🗑️ Supprimer un devis
   const handleDeleteDevis = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce devis ?")) {
       try {
@@ -70,62 +90,191 @@ const DevisPage = () => {
       }
     }
   };
-
-  // 🧾 Affichage/impression d'un devis
   const handleViewDevis = (devis) => {
+    const logoURL = devis.logo
+      ? typeof devis.logo === "string"
+        ? `/uploads/${devis.logo}`
+        : URL.createObjectURL(devis.logo)
+      : "";
+  
+    const remise = devis.discount || 0;
+    const subtotal = devis.subtotal || 0;
+    const remiseMontant = subtotal * (remise / 100);
+    const tax = devis.tax || 0;
+    const total = devis.total || subtotal - remiseMontant + tax;
+    const tvaRate = subtotal ? ((tax / (subtotal - remiseMontant)) * 100).toFixed(0) : 19;
+  
+    const clientInfo = typeof devis.client === "object"
+      ? `${devis.client.nom} ${devis.client.prenom} - ${devis.client.societe}`
+      : devis.client;
+  
     const devisHTML = `
-      <html><head><title>Devis ${devis.numeroDevis}</title>
-        <style>
-          body { font-family: Arial; margin: 40px; color: #333; }
-          h1 { text-align: center; color: #167DB8; }
-          .header, .footer { text-align: center; margin-bottom: 20px; }
-          .info { margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-          th { background-color: #f2f2f2; }
-          .totals { text-align: right; }
-        </style>
-      </head><body>
-        <h1>${devis.nomEntreprise || "Nom Entreprise"}</h1>
-        <div class="header"><strong>Téléphone :</strong> ${devis.telephone || "-"}</div>
-        <div class="info">
-          <p><strong>Client :</strong> ${devis.client}</p>
-          <p><strong>Date :</strong> ${devis.date}</p>
-          <p><strong>Numéro :</strong> ${devis.numeroDevis}</p>
-          <p><strong>Référence :</strong> ${devis.reference}</p>
-        </div>
-        <table>
-          <thead><tr><th>Description</th><th>Quantité</th><th>Prix Unitaire</th><th>Total</th></tr></thead>
-          <tbody>
-            ${devis.lignes
-              .map(
-                (l) => `
+      <html>
+        <head>
+          <title>Devis ${devis.numeroDevis}</title>
+          <style>
+            body {
+              font-family: 'Helvetica Neue', Arial, sans-serif;
+              margin: 60px;
+              color: #2f3e4d;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 40px;
+            }
+            .header img {
+              max-width: 140px;
+              max-height: 100px;
+            }
+            .section-title {
+              color: #5c6b73;
+              font-weight: 500;
+              margin-bottom: 5px;
+              font-size: 14px;
+            }
+            .client-info, .devis-info {
+              font-size: 16px;
+              line-height: 1.6;
+            }
+            .info-blocks {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 30px;
+              font-size: 15px;
+            }
+            th {
+              text-align: left;
+              background-color: #f2f4f6;
+              color: #4b5563;
+              padding: 12px;
+              border-bottom: 2px solid #e5e7eb;
+            }
+            td {
+              padding: 12px;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .totals {
+              margin-top: 40px;
+              text-align: right;
+              font-size: 16px;
+              color: #1f2937;
+            }
+            .totals p {
+              margin: 5px 0;
+            }
+            .total-amount {
+              font-size: 20px;
+              font-weight: bold;
+            }
+            .footer {
+              margin-top: 60px;
+              text-align: center;
+              color: #9ca3af;
+              font-size: 13px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="section-title">Client</div>
+              <div class="client-info">
+                ${clientInfo || "Nom du client"}<br/>
+                ${devis.nomEntreprise || ""}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <strong>Ganesh Coding</strong><br/>
+              Beb bhar<br/>
+              251403625
+            </div>
+            ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
+          </div>
+  
+          <div class="info-blocks">
+            <div class="devis-info">
+              <div class="section-title">Date du devis</div>
+              ${devis.date}
+            </div>
+            <div class="devis-info">
+              <div class="section-title">Numéro du devis</div>
+              ${devis.numeroDevis}
+            </div>
+          </div>
+  
+          <table>
+            <thead>
               <tr>
-                <td>${l.designation}</td>
-                <td>${l.quantite}</td>
-                <td>${l.prixUnitaire.toFixed(3)} TND</td>
-                <td>${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
+                <th>Désignation</th>
+                <th style="text-align:center;">Prix unitaire</th>
+                <th style="text-align:center;">Quantité</th>
+                <th style="text-align:right;">Total ligne</th>
               </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-        <div class="totals">
-          <p><strong>Subtotal :</strong> ${devis.subtotal.toFixed(3)} TND</p>
-          <p><strong>Tax (19%) :</strong> ${devis.tax.toFixed(3)} TND</p>
-          <h3><strong>Total :</strong> ${devis.total.toFixed(3)} TND</h3>
-        </div>
-        <div class="footer"><p>Merci pour votre confiance !</p></div>
-      </body></html>
+            </thead>
+            <tbody>
+              ${devis.lignes.map((l) => `
+                <tr>
+                  <td>${l.designation}</td>
+                  <td style="text-align:center;">${l.prixUnitaire.toFixed(3)} TND</td>
+                  <td style="text-align:center;">${l.quantite}</td>
+                  <td style="text-align:right;">${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+  
+          <div class="totals">
+            <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
+            <p><strong>Remise (${remise}%):</strong> ${remiseMontant.toFixed(3)} TND</p>
+            <p><strong>TVA (${tvaRate}%):</strong> ${tax.toFixed(3)} TND</p>
+            <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
+          </div>
+  
+          <div class="footer">
+            Merci pour votre confiance – Facterli
+          </div>
+        </body>
+      </html>
     `;
-    const newWindow = window.open("", "_blank", "width=800,height=600");
+  
+    const newWindow = window.open("", "_blank", "width=900,height=600");
     newWindow.document.write(devisHTML);
     newWindow.document.close();
+    newWindow.focus();
+    newWindow.print();
   };
+  
+  
 
   const handleEditDevis = (devis) => {
-    setDevisToEdit(devis);
+    const lignesAvecDesignation = devis.lignes.map((ligne) => {
+      const item = produitsServices.find(
+        (p) => p.id === ligne.itemId && p.type === ligne.type
+      );
+      return {
+        ...ligne,
+        designation: item ? `${item.nom} - ${item.prix}` : ligne.designation,
+      };
+    });
+
+    const logo = devis.logo ? devis.logo : null;
+    const nomEntreprise = devis.nomEntreprise || "";
+    const telephone = devis.telephone || "";
+
+    setDevisToEdit({
+      ...devis,
+      lignes: lignesAvecDesignation,
+      logo: devis.logo || "", //
+      nomEntreprise,
+      telephone,
+    });
     setShowForm(true);
   };
 
@@ -153,62 +302,53 @@ const DevisPage = () => {
             setDevisToEdit(null);
           }}
           editData={devisToEdit}
+          produitsServices={produitsServices}
         />
       )}
 
-      <Card className="shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
-        <h6 className="mb-3 fst-italic">• Liste des devis :</h6>
+      <Card className="shadow-lg p-4 mx-auto border-0 rounded-4" style={{ maxWidth: "1200px" }}>
+        <h5 className="mb-4 fw-semibold text-primary">Liste des devis</h5>
         {devisList.length > 0 ? (
-          <ListGroup variant="flush" className="d-flex flex-column gap-3">
-            {devisList.map((devis) => (
-              <ListGroup.Item
-                key={devis._id}
-                className="d-flex justify-content-between align-items-center border rounded px-3 py-2"
-              >
-                <div
-                  onClick={() => handleViewDevis(devis)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <FaFileAlt size={20} color="#23BD15" className="me-2" />
-                  <span className="fw-normal">
-                    {devis.client} - {devis.numeroDevis}
-                  </span>
-                  <Badge
-                    bg={
-                      devis.statut === "accepté"
-                        ? "success"
-                        : devis.statut === "refusé"
-                        ? "danger"
-                        : "warning"
-                    }
-                    className="ms-2"
-                  >
-                    {devis.statut}
-                  </Badge>
-                </div>
-                <div className="d-flex gap-2">
-                  <Button
-                    variant="link"
-                    className="text-dark p-0"
-                    onClick={() => handleEditDevis(devis)}
-                  >
-                    <FaPen size={16} />
-                  </Button>
-                  <Button
-                    variant="link"
-                    className="text-dark p-0"
-                    onClick={() => handleDeleteDevis(devis._id)}
-                  >
-                    <FaTrash size={16} />
-                  </Button>
-                </div>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          <Table responsive className="align-middle text-center table-striped">
+            <thead className="bg-light text-muted">
+              <tr>
+                <th className="text-start">Client / N°</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {devisList.map((devis) => (
+                <tr key={devis._id} className="align-middle">
+                  <td className="text-start">
+                    <div className="fw-semibold">{devis.client}</div>
+                    <small className="text-muted">{devis.numeroDevis}</small>
+                  </td>
+                  <td>{devis.date?.slice(0, 10)}</td>
+                  <td>{devis.total?.toFixed(3)} TND</td>
+                  <td>
+                    <Badge bg={
+                      devis.statut === "accepté" ? "success" :
+                      devis.statut === "refusé" ? "danger" : "warning"
+                    } className="px-3 py-2 text-capitalize">
+                      {devis.statut}
+                    </Badge>
+                  </td>
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <Button variant="outline-primary" size="sm" onClick={() => handleViewDevis(devis)}><FaFileAlt /></Button>
+                      <Button variant="outline-success" size="sm" onClick={() => handleEditDevis(devis)}><FaPen /></Button>
+                      <Button variant="outline-danger" size="sm" onClick={() => handleDeleteDevis(devis._id)}><FaTrash /></Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
         ) : (
-          <p className="text-center text-muted">
-            Aucun devis enregistré pour l’instant.
-          </p>
+          <p className="text-center text-muted">Aucun devis enregistré pour l’instant.</p>
         )}
       </Card>
     </Container>
