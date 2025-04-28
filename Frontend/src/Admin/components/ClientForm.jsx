@@ -31,8 +31,18 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formClient.nom || !formClient.prenom || !formClient.email) {
-      alert("Nom, prénom et email sont obligatoires !");
+    const { nom, prenom, email, societe, telephone, adresse } = formClient;
+
+    // ✅ Vérifier champs vides
+    if (!nom || !prenom || !email || !societe || !telephone || !adresse) {
+      alert("⚠️ Tous les champs sont obligatoires.");
+      return;
+    }
+
+    // ✅ Vérifier numéro de téléphone (exactement 8 chiffres)
+    const phoneRegex = /^[0-9]{8}$/;
+    if (!phoneRegex.test(telephone)) {
+      alert("📞 Le numéro de téléphone doit contenir exactement 8 chiffres.");
       return;
     }
 
@@ -50,6 +60,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
         alert(`✅ Client créé avec succès !\n\n🛡️ Mot de passe généré : ${motDePasseGenere}`);
       }
 
+      // ✅ Réinitialisation + fermeture
       setFormClient({
         nom: "",
         prenom: "",
@@ -60,7 +71,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
         motDePasse: ""
       });
 
-      if (onClose) onClose(); // ✅ ici le bon prop
+      if (onClose) onClose(); // ✅ ici correct
     } catch (error) {
       if (error.response && error.response.status === 409) {
         alert("⚠️ Un client avec cet email existe déjà !");
@@ -88,7 +99,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
                 onChange={handleChange}
                 placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                 style={inputStyle}
-                required={["nom", "prenom", "email"].includes(field)}
+                required
               />
             </Form.Group>
           ))}
@@ -96,7 +107,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
           <div className="d-flex justify-content-between mt-4">
             <Button
               type="button"
-              onClick={onClose} // ✅ corrigé ici aussi
+              onClick={onClose}
               style={cancelButtonStyle}
             >
               Annuler

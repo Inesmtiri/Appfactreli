@@ -25,21 +25,35 @@ const DepensePage = () => {
   // ➕ Ajouter ou modifier une dépense
   const handleSaveDepense = async (depense) => {
     try {
+      // Nettoyage des données avant envoi
+      const cleanedDepense = {
+        categorie: depense.categorie,
+        montant: parseFloat(depense.total),
+        date: depense.date,
+        description: depense.description,
+        commercant: depense.commercant,
+        image: depense.fichierRecu || "", // base64
+      };
+
       if (editData) {
         // Mode édition
-        const res = await axios.put(`/api/depenses/${editData._id}`, depense);
+        const res = await axios.put(`/api/depenses/${editData._id}`, cleanedDepense);
         setDepenses(
           depenses.map((d) => (d._id === editData._id ? res.data : d))
         );
       } else {
         // Nouvelle dépense
-        const res = await axios.post("/api/depenses", depense);
+        const res = await axios.post("/api/depenses", cleanedDepense);
         setDepenses([res.data, ...depenses]);
       }
+
       setShowForm(false);
       setEditData(null);
     } catch (err) {
       console.error("Erreur lors de l'enregistrement :", err);
+      if (err.response) {
+        console.error("Message backend :", err.response.data);
+      }
     }
   };
 
