@@ -8,13 +8,12 @@ const DepensePage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  // 📦 Charger les dépenses
   const fetchDepenses = async () => {
     try {
       const res = await axios.get("/api/depenses");
       setDepenses(res.data);
     } catch (err) {
-      console.error("Erreur lors du chargement des dépenses :", err);
+      console.error("Erreur chargement des dépenses :", err);
     }
   };
 
@@ -22,27 +21,21 @@ const DepensePage = () => {
     fetchDepenses();
   }, []);
 
-  // ➕ Ajouter ou modifier une dépense
   const handleSaveDepense = async (depense) => {
     try {
-      // Nettoyage des données avant envoi
       const cleanedDepense = {
         categorie: depense.categorie,
-        montant: parseFloat(depense.total),
+        montant: parseFloat(depense.montant),
         date: depense.date,
         description: depense.description,
         commercant: depense.commercant,
-        image: depense.fichierRecu || "", // base64
+        image: depense.fichierRecu || "",
       };
 
       if (editData) {
-        // Mode édition
         const res = await axios.put(`/api/depenses/${editData._id}`, cleanedDepense);
-        setDepenses(
-          depenses.map((d) => (d._id === editData._id ? res.data : d))
-        );
+        setDepenses(depenses.map((d) => (d._id === editData._id ? res.data : d)));
       } else {
-        // Nouvelle dépense
         const res = await axios.post("/api/depenses", cleanedDepense);
         setDepenses([res.data, ...depenses]);
       }
@@ -57,13 +50,11 @@ const DepensePage = () => {
     }
   };
 
-  // ✏️ Modifier une dépense
   const handleEditDepense = (depense) => {
     setEditData(depense);
     setShowForm(true);
   };
 
-  // ❌ Supprimer une dépense
   const handleDeleteDepense = async (id) => {
     if (window.confirm("Supprimer cette dépense ?")) {
       try {
@@ -77,7 +68,6 @@ const DepensePage = () => {
 
   return (
     <div className="container py-4">
-      {/* ✅ Bouton Nouvelle dépense */}
       {!showForm && (
         <div className="d-flex justify-content-end mb-4">
           <button
@@ -98,7 +88,6 @@ const DepensePage = () => {
         </div>
       )}
 
-      {/* ✅ Formulaire */}
       {showForm && (
         <DepenseForm
           onCancel={() => {
@@ -110,11 +99,9 @@ const DepensePage = () => {
         />
       )}
 
-      {/* ✅ Liste des dépenses */}
       {!showForm && (
         <div className="card border-0 shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
           <h6 className="fst-italic mb-3">• Liste des dépenses :</h6>
-
           {depenses.length === 0 ? (
             <p className="text-center text-muted">Aucune dépense enregistrée.</p>
           ) : (
@@ -139,11 +126,8 @@ const DepensePage = () => {
                     </small>
                     <p className="mb-0">{depense.description || "Pas de description"}</p>
                   </div>
-
                   <div className="d-flex align-items-center gap-3">
-                    <span className="fw-bold">
-                      {parseFloat(depense.montant).toFixed(3)} TND
-                    </span>
+                    <span className="fw-bold">{parseFloat(depense.montant).toFixed(3)} TND</span>
                     <button
                       className="btn btn-link text-primary p-0"
                       onClick={() => handleEditDepense(depense)}
