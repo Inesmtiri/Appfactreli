@@ -5,7 +5,7 @@ const ligneSchema = new mongoose.Schema({
   itemId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: "lignes.type", // Référence dynamique vers produit ou service
+    refPath: "lignes.type",
   },
   type: {
     type: String,
@@ -55,11 +55,14 @@ const factureSchema = new mongoose.Schema(
     statut: {
       type: String,
       enum: ["payé", "non payé", "partiellement payé"],
-      // ✅ plus de default, le statut sera calculé dans le backend
     },
     envoyée: {
       type: Boolean,
       default: false,
+    },
+    logo: { // ✅ NOUVEAU
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }

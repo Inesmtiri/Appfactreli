@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import axios from "axios";
 import EditAdressePasswordModal from "./EditProfileModal";
+import EditClientProfileModal from "../../Clients/Components/EditClientProfileModal";
 
 const routeToModule = {
   "/dashboard": { name: "Dashboard", icon: <FaTachometerAlt /> },
@@ -35,48 +36,23 @@ const Navbar = ({ onLogout, onSearch }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [user, setUser] = useState({
-    firstName: "",
-    lastName: "",
+    prenom: "",
+    nom: "",
     email: "",
     _id: "",
+    role: "",
   });
 
   const menuRef = useRef();
-  const activeModule = routeToModule[location.pathname];
-
-  // 🔄 Charger les données utilisateur depuis localStorage ou backend
-  useEffect(() => {
-    const storedUser = localStorage.getItem("userData");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    } else {
-      const userId = localStorage.getItem("userId");
-      const fetchUser = async () => {
-        try {
-          const res = await axios.get(`http://localhost:3001/api/users/${userId}`);
-          setUser(res.data);
-          localStorage.setItem("userData", JSON.stringify(res.data));
-        } catch (err) {
-          console.error("Erreur lors du chargement utilisateur :", err);
-        }
-      };
-      if (userId) fetchUser();
-    }
-  }, []);
 
   const getInitials = () => {
-    const f = user.firstName?.[0]?.toUpperCase() || "";
-    const l = user.lastName?.[0]?.toUpperCase() || "";
+    const f = user.prenom?.[0]?.toUpperCase() || "";
+    const l = user.nom?.[0]?.toUpperCase() || "";
     return f + l;
   };
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
-  const handleSearchClick = () => onSearch && onSearch(searchTerm);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
-  const handleProfileClick = () => {
-    setShowProfileModal(true);
-    setMenuOpen(false);
-  };
+  const activeModule = routeToModule[location.pathname];
+
   const handleClickOutside = (e) => {
     if (menuRef.current && !menuRef.current.contains(e.target)) {
       setMenuOpen(false);
@@ -88,7 +64,21 @@ const Navbar = ({ onLogout, onSearch }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Lors de la sauvegarde du profil (depuis le modal)
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userData");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+  const handleSearchClick = () => onSearch && onSearch(searchTerm);
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+    setMenuOpen(false);
+  };
+
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
     localStorage.setItem("userData", JSON.stringify(updatedUser));
@@ -109,13 +99,13 @@ const Navbar = ({ onLogout, onSearch }) => {
           borderBottom: "1px solid #eee",
         }}
       >
-        {/* Module actif */}
+        {/* Titre page */}
         <div className="d-flex align-items-center gap-2 text-dark">
           {activeModule?.icon}
           <span className="fst-italic fw-semibold">{activeModule?.name}</span>
         </div>
 
-        {/* Recherche + Avatar */}
+        {/* Recherche + Profil */}
         <div className="d-flex align-items-center gap-3">
           <div className="input-group" style={{ width: "300px" }}>
             <input
@@ -147,7 +137,7 @@ const Navbar = ({ onLogout, onSearch }) => {
               onClick={toggleMenu}
               title="Profil"
             >
-              {user.firstName && user.lastName ? getInitials() : <FaUser />}
+              {user.prenom && user.nom ? getInitials() : <FaUser />}
             </div>
 
             {menuOpen && (
@@ -190,13 +180,22 @@ const Navbar = ({ onLogout, onSearch }) => {
         `}</style>
       </nav>
 
-      {/* ✅ Modal avec mise à jour backend + localStorage */}
-      <EditAdressePasswordModal
-        show={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        user={user}
-        onSave={handleUserUpdate}
-      />
+      {/* 🔄 Modal admin ou client selon rôle */}
+      {user.role === "admin" ? (
+        <EditAdressePasswordModal
+          show={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={user}
+          onSave={handleUserUpdate}
+        />
+      ) : (
+        <EditClientProfileModal
+          show={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={user}
+          onSave={handleUserUpdate}
+        />
+      )}
     </>
   );
 };

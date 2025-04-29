@@ -7,7 +7,7 @@ import {
 
 const MesDevis = () => {
   const [devisList, setDevisList] = useState([]);
-  const clientId = JSON.parse(localStorage.getItem("user"))?.id;
+  const clientId = JSON.parse(localStorage.getItem("userData"))?._id; // ✅ Correction ici
 
   // Charger les devis du client
   useEffect(() => {

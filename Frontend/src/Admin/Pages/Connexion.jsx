@@ -18,7 +18,7 @@ export default function Connexion() {
       });
 
       const { role } = res.data;
-      localStorage.setItem("user", JSON.stringify(res.data));
+      localStorage.setItem("userData", JSON.stringify(res.data)); // ✅ Clé corrigée
 
       // ✅ Redirection selon le rôle
       if (role === "admin") {

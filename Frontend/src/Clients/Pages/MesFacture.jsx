@@ -9,16 +9,16 @@ export default function MesFacturesClient() {
   useEffect(() => {
     const fetchFactures = async () => {
       try {
-        const client = JSON.parse(localStorage.getItem("user"));
+        const client = JSON.parse(localStorage.getItem("userData"));
 
-        if (!client || !client.id) {
+        if (!client || !client._id) {
           console.warn("❌ Aucun client connecté ou ID manquant dans localStorage");
           return;
         }
 
-        console.log("📦 ID client localStorage:", client.id); // DEBUG
+        console.log("📦 ID client localStorage:", client._id); // DEBUG
 
-        const res = await axios.get(`http://localhost:3001/api/mes-factures/${client.id}`);
+        const res = await axios.get(`http://localhost:3001/api/mes-factures/${client._id}`);
 
         console.log("📊 Factures récupérées :", res.data); // DEBUG
 

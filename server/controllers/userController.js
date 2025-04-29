@@ -33,3 +33,33 @@ export const registerUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const updateUser = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    const updatedFields = {
+      firstName,
+      lastName,
+      email,
+    };
+
+    if (password) {
+      updatedFields.password = password; // seulement si un nouveau mot de passe est fourni
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      updatedFields,
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Erreur updateUser:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};

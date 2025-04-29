@@ -4,10 +4,11 @@ import {
   Row,
   Col,
   Button,
-  Form,
+  Table,
+  Card,
   Badge,
 } from "react-bootstrap";
-import { FaUpload, FaTrash, FaPen } from "react-icons/fa";
+import { FaTrash, FaPen } from "react-icons/fa";
 import AddProduitModal from "../components/Produits/AddProduit";
 import AddServiceModal from "../components/Produits/AddService";
 import ProduitServiceTabs from "../components/Produits/ProduitServiceTabs";
@@ -22,8 +23,8 @@ const ProduitServicePage = () => {
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
 
-  const [produitEnCours, setProduitEnCours] = useState(null); // Pour modification produit
-  const [serviceEnCours, setServiceEnCours] = useState(null); // Pour modification service
+  const [produitEnCours, setProduitEnCours] = useState(null);
+  const [serviceEnCours, setServiceEnCours] = useState(null);
 
   useEffect(() => {
     fetchProduits();
@@ -52,8 +53,7 @@ const ProduitServicePage = () => {
     try {
       if (produitEnCours) {
         const res = await axios.put(`http://localhost:3001/api/produits/${produitEnCours._id}`, produit);
-        const updatedList = produits.map(p => p._id === produitEnCours._id ? res.data : p);
-        setProduits(updatedList);
+        setProduits(produits.map(p => p._id === produitEnCours._id ? res.data : p));
         setProduitEnCours(null);
       } else {
         const res = await axios.post("http://localhost:3001/api/produits", produit);
@@ -69,8 +69,7 @@ const ProduitServicePage = () => {
     try {
       if (serviceEnCours) {
         const res = await axios.put(`http://localhost:3001/api/services/${serviceEnCours._id}`, service);
-        const updated = services.map(s => s._id === serviceEnCours._id ? res.data : s);
-        setServices(updated);
+        setServices(services.map(s => s._id === serviceEnCours._id ? res.data : s));
         setServiceEnCours(null);
       } else {
         const res = await axios.post("http://localhost:3001/api/services", service);
@@ -102,18 +101,8 @@ const ProduitServicePage = () => {
 
   return (
     <Container className="mt-4">
-      {/* Header */}
-      <Row className="justify-content-end mb-4">
-        <Col xs="auto" className="d-flex gap-2">
-          <Form.Label htmlFor="file-upload" className="btn btn-primary">
-            <FaUpload className="me-1" /> Importer
-          </Form.Label>
-          <Form.Control
-            id="file-upload"
-            type="file"
-            accept=".xlsx, .xls"
-            style={{ display: "none" }}
-          />
+      <Row className="mb-4 justify-content-end">
+        <Col xs="auto">
           <Button
             style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
             onClick={() => {
@@ -122,82 +111,88 @@ const ProduitServicePage = () => {
               setServiceEnCours(null);
             }}
           >
-            Créer
+            Ajouter
           </Button>
         </Col>
       </Row>
 
-      {/* Tabs */}
       <ProduitServiceTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Produits */}
-      {activeTab === "produits" ? (
-        produits.length > 0 ? produits.map((produit) => (
-          <div key={produit._id} className="d-flex justify-content-between align-items-center border rounded p-3 mb-2">
-            <div>
-              <div className="fw-bold">{produit.reference}</div>
-              <div className="text-muted small">Catégorie : {produit.categorie}</div>
-            </div>
-            <div className="d-flex align-items-center gap-3">
-              <Badge
-                bg={produit.stockActuel === 0 ? "danger" : "warning"}
-                className="text-capitalize px-3 py-2"
-              >
-                {produit.stockActuel === 0 ? "Rupture" : "En stock"}
-              </Badge>
-              <Button
-                variant="link"
-                className="text-primary p-0"
-                onClick={() => {
-                  setProduitEnCours(produit);
-                  setShowAddProduitModal(true);
-                }}
-              >
-                <FaPen />
-              </Button>
-              <Button
-                variant="link"
-                className="text-dark p-0"
-                onClick={() => handleDeleteProduit(produit._id)}
-              >
-                <FaTrash />
-              </Button>
-            </div>
-          </div>
-        )) : (
-          <p className="text-center text-muted">Aucun produit trouvé.</p>
-        )
-      ) : (
-        services.length > 0 ? services.map((service) => (
-          <div key={service._id} className="d-flex justify-content-between align-items-center border rounded p-3 mb-2">
-            <div>
-              <div className="fw-bold">{service.nom}</div>
-              <div className="text-muted small">{service.description}</div>
-            </div>
-            <div className="d-flex align-items-center gap-3">
-              <Button
-                variant="link"
-                className="text-primary p-0"
-                onClick={() => {
-                  setServiceEnCours(service);
-                  setShowAddServiceModal(true);
-                }}
-              >
-                <FaPen />
-              </Button>
-              <Button
-                variant="link"
-                className="text-dark p-0"
-                onClick={() => handleDeleteService(service._id)}
-              >
-                <FaTrash />
-              </Button>
-            </div>
-          </div>
-        )) : (
-          <p className="text-center text-muted">Aucun service trouvé.</p>
-        )
-      )}
+      <Card className="shadow-lg p-4 mx-auto border-0 rounded-4" style={{ maxWidth: "1200px" }}>
+        <h5 className="mb-4 fw-semibold text-primary">
+          {activeTab === "produits" ? "Liste des produits" : "Liste des services"}
+        </h5>
+
+        {(activeTab === "produits" ? produits.length : services.length) > 0 ? (
+          <Table responsive className="align-middle text-center table-striped">
+            <thead className="bg-light text-muted">
+              <tr>
+                <th className="text-start">{activeTab === "produits" ? "Référence" : "Nom"}</th>
+                <th>{activeTab === "produits" ? "Catégorie" : "Description"}</th>
+                {activeTab === "produits" && <th>Stock</th>}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(activeTab === "produits" ? produits : services).map((item) => (
+                <tr key={item._id}>
+                  <td className="text-start fw-semibold">
+                    {activeTab === "produits" ? item.reference : item.nom}
+                  </td>
+                  <td className="text-muted small">
+                    {activeTab === "produits" ? item.categorie : item.description}
+                  </td>
+                  {activeTab === "produits" && (
+                    <td>
+                      <Badge
+                        bg={item.stockActuel === 0 ? "danger" : "warning"}
+                        className="text-capitalize px-3 py-2"
+                      >
+                        {item.stockActuel === 0 ? "Rupture" : "En stock"}
+                      </Badge>
+                    </td>
+                  )}
+                  <td>
+                    <div className="d-flex justify-content-center gap-2">
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        onClick={() => {
+                          if (activeTab === "produits") {
+                            setProduitEnCours(item);
+                            setShowAddProduitModal(true);
+                          } else {
+                            setServiceEnCours(item);
+                            setShowAddServiceModal(true);
+                          }
+                        }}
+                        
+                      >
+                        <FaPen />
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() =>
+                          activeTab === "produits"
+                            ? handleDeleteProduit(item._id)
+                            : handleDeleteService(item._id)
+                        }
+                      >
+                        <FaTrash />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <p className="text-center text-muted">
+            Aucun {activeTab === "produits" ? "produit" : "service"} trouvé pour l’instant.
+          </p>
+        )}
+      </Card>
 
       {/* Modals */}
       <AddProduitModal
