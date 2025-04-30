@@ -121,41 +121,55 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const discountAmount = subtotal * (discount / 100);
   const tax = (subtotal - discountAmount) * (tva / 100);
   const total = subtotal - discountAmount + tax;
-
-  const handleSave = async () => {
-    if (!clientId) return alert("Veuillez sélectionner un client.");
-
-    const devis = {
-      clientId,
-      client: clients.find(c => c._id === clientId)?.nom + " " + clients.find(c => c._id === clientId)?.prenom,
-      nomEntreprise,
-      adresse,
-      telephone,
-      date,
-      numeroDevis,
-      reference,
-      lignes,
-      subtotal,
-      tax,
-      total,
-      discount,
-      statut: "en attente",
-      logo,
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  
+    const handleSave = async () => {
+      if (!clientId) return alert("Veuillez sélectionner un client.");
+    
+      let logoData = logo;
+    
+      // ⚡ Si c'est un fichier, le transformer en base64
+      if (logo instanceof File) {
+        logoData = await toBase64(logo);
+      }
+    
+      const devis = {
+        clientId,
+        client: clients.find(c => c._id === clientId)?.nom + " " + clients.find(c => c._id === clientId)?.prenom,
+        nomEntreprise,
+        adresse,
+        telephone,
+        date,
+        numeroDevis,
+        reference,
+        lignes,
+        subtotal,
+        tax,
+        total,
+        discount,
+        statut: "en attente",
+        logo: logoData || "", // ✅ Base64 ou chaîne vide
+      };
+    
+      try {
+        const res = editData?._id
+          ? await axios.put(`/api/devis/${editData._id}`, devis)
+          : await axios.post("/api/devis", devis);
+    
+        onAddDevis(res.data);
+        onCancel();
+      } catch (err) {
+        alert("Erreur lors de l'enregistrement.");
+        console.error(err.message);
+      }
     };
-
-    try {
-      const res = editData?._id
-        ? await axios.put(`/api/devis/${editData._id}`, devis)
-        : await axios.post("/api/devis", devis);
-
-      // ✅ Appelle uniquement le parent avec le devis créé ou mis à jour
-      onAddDevis(res.data);
-      onCancel();
-    } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
-      console.error(err.message);
-    }
-  };
+    
 
 
   const handleClientCreated = (newClient) => {

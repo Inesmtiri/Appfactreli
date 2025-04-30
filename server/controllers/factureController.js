@@ -1,4 +1,5 @@
 import Facture from "../models/facture.js";
+import Produit from "../models/Produit.js"; // 🆕 Import Produit pour gérer le stock
 
 // Créer une facture
 export const ajouterFacture = async (req, res) => {
@@ -33,6 +34,19 @@ export const ajouterFacture = async (req, res) => {
     });
 
     const saved = await nouvelleFacture.save();
+
+    // 🛠 Décrémenter les stocks après création de facture
+    for (const ligne of data.lignes) {
+      if (ligne.type === "produit") {
+        const produit = await Produit.findById(ligne.itemId);
+        if (produit) {
+          produit.stockActuel = Math.max(0, produit.stockActuel - ligne.quantite);
+          produit.statut = produit.stockActuel === 0 ? "rupture" : "en stock";
+          await produit.save();
+        }
+      }
+    }
+
     res.status(201).json(saved);
   } catch (error) {
     console.error("Erreur ajout facture :", error);
@@ -113,7 +127,7 @@ export const envoyerFacture = async (req, res) => {
   try {
     const facture = await Facture.findByIdAndUpdate(
       req.params.id,
-      {  envoyée: true},
+      { envoyée: true },
       { new: true }
     );
 
@@ -126,4 +140,4 @@ export const envoyerFacture = async (req, res) => {
     console.error("Erreur lors de l'envoi de la facture :", error);
     res.status(500).json({ message: "Erreur envoi facture" });
   }
-}; 
+};

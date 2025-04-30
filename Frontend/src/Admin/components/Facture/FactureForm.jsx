@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FaTrash, FaPrint } from "react-icons/fa";
-
 import axios from "axios";
-import ClientForm from "../ClientForm"; 
+import ClientForm from "../ClientForm";
+
 const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const [clients, setClients] = useState([]);
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
   const [clientId, setClientId] = useState(editData?.client || "");
-const [clientInput, setClientInput] = useState(editData?.clientInput || "");
-
+  const [clientInput, setClientInput] = useState(editData?.clientInput || "");
   const [nomEntreprise, setNomEntreprise] = useState(editData?.nomEntreprise || "");
   const [telephone, setTelephone] = useState(editData?.telephone || "");
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
@@ -22,10 +21,9 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
   const [lignes, setLignes] = useState(
     editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
   );
-
-  
   const [showClientForm, setShowClientForm] = useState(false);
   const printRef = useRef();
+
   const generateNumeroFacture = async () => {
     try {
       const res = await axios.get("/api/factures");
@@ -39,6 +37,7 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
       console.error("❌ Erreur lors de la génération du numéro :", err);
     }
   };
+
   const handleClientCreated = (newClient) => {
     axios.get("/api/clients").then((res) => setClients(res.data));
     setClientId(newClient._id);
@@ -46,7 +45,6 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
     setShowClientForm(false);
   };
 
-  
   useEffect(() => {
     const initNumeroFacture = async () => {
       if (editData?.numeroFacture) {
@@ -123,11 +121,11 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
     }
   };
 
-  
-    const handleSave = async () => {
-      if (!clientId) return alert("Veuillez sélectionner un client.");
-      if (!reference.trim()) return alert("Référence requise !");
-      if (telephone.length !== 8 || !/^[0-9]{8}$/.test(telephone)) return alert("Téléphone invalide (8 chiffres) !");
+  const handleSave = async () => {
+    if (!clientId) return alert("Veuillez sélectionner un client.");
+    if (!reference.trim()) return alert("Référence requise !");
+    if (telephone.length !== 8 || !/^[0-9]{8}$/.test(telephone)) return alert("Téléphone invalide (8 chiffres) !");
+
     const facture = {
       client: clientId,
       date,
@@ -160,87 +158,36 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
   };
 
   const handlePrint = async () => {
-    // 🔄 Convertir le logo en base64 si nécessaire
     const logoURL = logo
       ? typeof logo === "string"
-        ? logo.startsWith("data:") ? logo : `/uploads/${logo}` // déjà en base64 ou fichier serveur
+        ? logo.startsWith("data:") ? logo : `/uploads/${logo}`
         : await new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result); // base64
+            reader.onloadend = () => resolve(reader.result);
             reader.readAsDataURL(logo);
           })
       : "";
-  
+
     const clientInfo = clients.find(c => c._id === clientId);
-  
+
     const html = `
     <html>
       <head>
         <title>Facture ${numeroFacture}</title>
         <style>
-          body {
-            font-family: 'Arial', sans-serif;
-            margin: 60px;
-            color: #2f3e4d;
-          }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-          }
-          .header img {
-            max-width: 140px;
-            max-height: 100px;
-          }
-          .section-title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 14px;
-          }
-          .info, .facture-info {
-            font-size: 16px;
-            line-height: 1.6;
-          }
-          .info-blocks {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
-            font-size: 15px;
-          }
-          th {
-            background-color: #f2f4f6;
-            color: #4b5563;
-            padding: 12px;
-            border-bottom: 2px solid #e5e7eb;
-          }
-          td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          .totals {
-            margin-top: 40px;
-            text-align: right;
-            font-size: 16px;
-          }
-          .totals p {
-            margin: 5px 0;
-          }
-          .total-amount {
-            font-size: 20px;
-            font-weight: bold;
-          }
-          .footer {
-            margin-top: 60px;
-            text-align: center;
-            color: #9ca3af;
-            font-size: 13px;
-          }
+          body { font-family: 'Arial', sans-serif; margin: 60px; color: #2f3e4d; }
+          .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+          .header img { max-width: 140px; max-height: 100px; }
+          .section-title { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+          .info, .facture-info { font-size: 16px; line-height: 1.6; }
+          .info-blocks { display: flex; justify-content: space-between; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 15px; }
+          th { background-color: #f2f4f6; color: #4b5563; padding: 12px; border-bottom: 2px solid #e5e7eb; }
+          td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+          .totals { margin-top: 40px; text-align: right; font-size: 16px; }
+          .totals p { margin: 5px 0; }
+          .total-amount { font-size: 20px; font-weight: bold; }
+          .footer { margin-top: 60px; text-align: center; color: #9ca3af; font-size: 13px; }
         </style>
       </head>
       <body>
@@ -252,16 +199,13 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
               ${nomEntreprise || ""}
             </div>
           </div>
-  
           <div style="text-align:right;">
             <strong>Ganesh Coding</strong><br/>
             25140235<br/>
             Beb bhar
           </div>
-  
           ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
         </div>
-  
         <div class="info-blocks">
           <div class="facture-info">
             <div class="section-title">Date de facture</div>
@@ -276,18 +220,12 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
             ${reference}
           </div>
         </div>
-  
         <table>
           <thead>
-            <tr>
-              <th>Désignation</th>
-              <th style="text-align:center;">Prix unitaire</th>
-              <th style="text-align:center;">Quantité</th>
-              <th style="text-align:right;">Total ligne</th>
-            </tr>
+            <tr><th>Désignation</th><th style="text-align:center;">Prix unitaire</th><th style="text-align:center;">Quantité</th><th style="text-align:right;">Total ligne</th></tr>
           </thead>
           <tbody>
-            ${lignes.map((ligne) => `
+            ${lignes.map(ligne => `
               <tr>
                 <td>${ligne.designation}</td>
                 <td style="text-align:center;">${ligne.prixUnitaire.toFixed(3)} TND</td>
@@ -297,27 +235,26 @@ const [clientInput, setClientInput] = useState(editData?.clientInput || "");
             `).join("")}
           </tbody>
         </table>
-  
         <div class="totals">
           <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
           <p><strong>Remise (${remise}%):</strong> ${(subtotal * remise / 100).toFixed(3)} TND</p>
           <p><strong>TVA (${tvaRate}%):</strong> ${tax.toFixed(3)} TND</p>
           <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
         </div>
-  
-        <div class="footer">
-          Merci pour votre confiance – Facterli
-        </div>
+        <div class="footer">Merci pour votre confiance – Facterli</div>
       </body>
     </html>
     `;
-  
+
     const win = window.open("", "_blank", "width=900,height=700");
     win.document.write(html);
     win.document.close();
     win.focus();
     win.print();
   };
+
+
+
   
   
 

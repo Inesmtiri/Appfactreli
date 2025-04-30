@@ -4,7 +4,7 @@ const ligneSchema = new mongoose.Schema({
   itemId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: "lignes.type", // référence dynamique : "produit" ou "service"
+    refPath: "lignes.type",
   },
   type: {
     type: String,
@@ -47,7 +47,11 @@ const devisSchema = new mongoose.Schema({
   statut: {
     type: String,
     enum: ["en attente", "envoyé", "accepté", "refusé"],
-    default: "en attente"
+    default: "en attente",
+  },
+  logo: { // ✅ NOUVEAU
+    type: String,
+    default: "",
   },
 }, {
   timestamps: true,

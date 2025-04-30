@@ -9,6 +9,9 @@ export default function MesFacturesClient() {
       try {
         const client = JSON.parse(localStorage.getItem("user"));
         if (!client || !client.id) {
+        const client = JSON.parse(localStorage.getItem("userData"));
+
+        if (!client || !client._id) {
           console.warn("❌ Aucun client connecté ou ID manquant dans localStorage");
           return;
         }

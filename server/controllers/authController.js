@@ -12,7 +12,7 @@ export const login = async (req, res) => {
     const admin = await User.findOne({ email });
     if (admin && await bcrypt.compare(password, admin.password)) {
       return res.status(200).json({
-        id: admin._id,
+        _id: admin._id,
         nom: admin.nom,
         prenom: admin.prenom,
         email: admin.email,
@@ -23,9 +23,8 @@ export const login = async (req, res) => {
     // 🔍 Client ?
     const client = await Client.findOne({ email });
     if (client && password === client.motDePasse) {
-
       return res.status(200).json({
-        id: client._id,
+        _id: client._id,
         nom: client.nom,
         prenom: client.prenom,
         email: client.email,
@@ -40,6 +39,7 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
 
 // 📩 Mot de passe oublié (envoi code)
 export const forgotPassword = async (req, res) => {
