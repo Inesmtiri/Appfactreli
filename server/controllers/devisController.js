@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import Devis from "../models/devis.js";
+
 // ✅ Ajouter un devis
 export const ajouterDevis = async (req, res) => {
   try {
@@ -25,7 +27,7 @@ export const ajouterDevis = async (req, res) => {
       tax: data.tax,
       total: data.total,
       statut: "en attente",
-
+      logo: data.logo || "", // ✅ Ajouté ici
     });
 
     const saved = await nouveauDevis.save();
@@ -76,6 +78,7 @@ export const updateDevis = async (req, res) => {
         tax: data.tax,
         total: data.total,
         statut: "en attente",
+        logo: data.logo || "", // ✅ Ajouté ici aussi
       },
       { new: true }
     );
@@ -112,7 +115,7 @@ export const envoyerDevis = async (req, res) => {
   }
 };
 
-// ✅ Accepter un devis (changer statut en "accepté")
+// ✅ Accepter un devis
 export const acceptDevis = async (req, res) => {
   try {
     const devis = await Devis.findByIdAndUpdate(
@@ -127,7 +130,7 @@ export const acceptDevis = async (req, res) => {
   }
 };
 
-// ✅ Refuser un devis (changer statut en "refusé")
+// ✅ Refuser un devis
 export const refuseDevis = async (req, res) => {
   try {
     const devis = await Devis.findByIdAndUpdate(
@@ -156,6 +159,8 @@ export const getDevisByClient = async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la récupération des devis." });
   }
 };
+
+// (non utilisé ici mais utile)
 async function getNextDevisNumber() {
   const counter = await Counter.findOneAndUpdate(
     { name: "devis" },

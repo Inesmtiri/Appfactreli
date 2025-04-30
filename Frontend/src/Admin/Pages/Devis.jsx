@@ -66,11 +66,9 @@ const DevisPage = () => {
   const handleAddDevis = async (devis) => {
     try {
       if (devisToEdit) {
-        // ✅ Mise à jour locale après update
         await updateDevis(devisToEdit._id, devis);
       } else {
-        // ❌ NE PAS faire axios.post ici — c'est déjà fait dans DevisForm
-        setDevisList((prev) => [...prev, devis]); // `devis` = res.data reçu depuis onAddDevis
+        setDevisList((prev) => [...prev, devis]);
       }
       setShowForm(false);
       setDevisToEdit(null);
@@ -78,7 +76,6 @@ const DevisPage = () => {
       console.error("Erreur enregistrement devis:", err.message);
     }
   };
-  
 
   const handleDeleteDevis = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce devis ?")) {
@@ -90,104 +87,51 @@ const DevisPage = () => {
       }
     }
   };
+
   const handleViewDevis = (devis) => {
-    const logoURL = devis.logo
-      ? typeof devis.logo === "string"
-        ? `/uploads/${devis.logo}`
-        : URL.createObjectURL(devis.logo)
-      : "";
-  
+    const logoURL = devis.logo || "";
     const remise = devis.discount || 0;
     const subtotal = devis.subtotal || 0;
     const remiseMontant = subtotal * (remise / 100);
     const tax = devis.tax || 0;
     const total = devis.total || subtotal - remiseMontant + tax;
     const tvaRate = subtotal ? ((tax / (subtotal - remiseMontant)) * 100).toFixed(0) : 19;
-  
     const clientInfo = typeof devis.client === "object"
       ? `${devis.client.nom} ${devis.client.prenom} - ${devis.client.societe}`
       : devis.client;
-  
+
     const devisHTML = `
       <html>
         <head>
           <title>Devis ${devis.numeroDevis}</title>
           <style>
-            body {
-              font-family: 'Helvetica Neue', Arial, sans-serif;
-              margin: 60px;
-              color: #2f3e4d;
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 40px;
-            }
-            .header img {
-              max-width: 140px;
-              max-height: 100px;
-            }
-            .section-title {
-              color: #5c6b73;
-              font-weight: 500;
-              margin-bottom: 5px;
-              font-size: 14px;
-            }
-            .client-info, .devis-info {
-              font-size: 16px;
-              line-height: 1.6;
-            }
-            .info-blocks {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 20px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 30px;
-              font-size: 15px;
-            }
-            th {
-              text-align: left;
-              background-color: #f2f4f6;
-              color: #4b5563;
-              padding: 12px;
-              border-bottom: 2px solid #e5e7eb;
-            }
-            td {
-              padding: 12px;
-              border-bottom: 1px solid #e5e7eb;
-            }
-            .totals {
-              margin-top: 40px;
-              text-align: right;
-              font-size: 16px;
-              color: #1f2937;
-            }
-            .totals p {
-              margin: 5px 0;
-            }
-            .total-amount {
-              font-size: 20px;
-              font-weight: bold;
-            }
-            .footer {
-              margin-top: 60px;
-              text-align: center;
-              color: #9ca3af;
-              font-size: 13px;
-            }
+            body { font-family: Arial, sans-serif; margin: 60px; color: #2f3e4d; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+            .client-info-logo { display: flex; gap: 20px; align-items: center; }
+            .logo-container { width: 80px; height: 80px; border: 1px solid #ccc; border-radius: 10px; overflow: hidden; display: flex; justify-content: center; align-items: center; background-color: #f9f9f9; }
+            .logo-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+            .section-title { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+            .info, .devis-info { font-size: 16px; line-height: 1.6; }
+            .info-blocks { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 15px; }
+            th { background-color: #f2f4f6; color: #4b5563; padding: 12px; border-bottom: 2px solid #e5e7eb; }
+            td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+            .totals { margin-top: 40px; text-align: right; font-size: 16px; }
+            .totals p { margin: 5px 0; }
+            .total-amount { font-size: 20px; font-weight: bold; }
+            .footer { margin-top: 60px; text-align: center; color: #9ca3af; font-size: 13px; }
           </style>
         </head>
         <body>
           <div class="header">
-            <div>
-              <div class="section-title">Client</div>
-              <div class="client-info">
-                ${clientInfo || "Nom du client"}<br/>
-                ${devis.nomEntreprise || ""}
+            <div class="client-info-logo">
+              ${logoURL ? `<div class="logo-container"><img src="${logoURL}" alt="Logo" /></div>` : ""}
+              <div>
+                <div class="section-title">Client</div>
+                <div class="info">
+                  ${clientInfo || "Nom du client"}<br/>
+                  ${devis.nomEntreprise || ""}
+                </div>
               </div>
             </div>
             <div style="text-align:right;">
@@ -195,9 +139,7 @@ const DevisPage = () => {
               Beb bhar<br/>
               251403625
             </div>
-            ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
           </div>
-  
           <div class="info-blocks">
             <div class="devis-info">
               <div class="section-title">Date du devis</div>
@@ -208,7 +150,6 @@ const DevisPage = () => {
               ${devis.numeroDevis}
             </div>
           </div>
-  
           <table>
             <thead>
               <tr>
@@ -229,29 +170,25 @@ const DevisPage = () => {
               `).join("")}
             </tbody>
           </table>
-  
           <div class="totals">
             <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
             <p><strong>Remise (${remise}%):</strong> ${remiseMontant.toFixed(3)} TND</p>
             <p><strong>TVA (${tvaRate}%):</strong> ${tax.toFixed(3)} TND</p>
             <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
           </div>
-  
           <div class="footer">
             Merci pour votre confiance – Facterli
           </div>
         </body>
       </html>
     `;
-  
+
     const newWindow = window.open("", "_blank", "width=900,height=600");
     newWindow.document.write(devisHTML);
     newWindow.document.close();
     newWindow.focus();
     newWindow.print();
   };
-  
-  
 
   const handleEditDevis = (devis) => {
     const lignesAvecDesignation = devis.lignes.map((ligne) => {
@@ -271,7 +208,7 @@ const DevisPage = () => {
     setDevisToEdit({
       ...devis,
       lignes: lignesAvecDesignation,
-      logo: devis.logo || "", //
+      logo: devis.logo || "",
       nomEntreprise,
       telephone,
     });

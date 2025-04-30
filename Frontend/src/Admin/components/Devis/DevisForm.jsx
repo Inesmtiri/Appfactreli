@@ -16,7 +16,13 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
   const [numeroDevis, setNumeroDevis] = useState("");
   const [reference, setReference] = useState(editData?.reference || "");
-  const [logo, setLogo] = useState(null);
+  const [logo, setLogo] = useState(editData?.logo || null);
+ 
+   useEffect(() => {
+     if (editData?.logo) {
+       setLogo(editData.logo);
+     }
+   }, [editData]);
   const [tva, setTva] = useState(19);
   const [discount, setDiscount] = useState(0);
   const [showClientForm, setShowClientForm] = useState(false);
@@ -180,7 +186,7 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const handlePrint = () => {
     const logoURL = logo
       ? typeof logo === "string"
-        ? `/uploads/${logo}`
+        ? logo
         : URL.createObjectURL(logo)
       : "";
   
@@ -197,12 +203,29 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
           .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 40px;
           }
-          .header img {
-            max-width: 140px;
-            max-height: 100px;
+          .client-info-logo {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+          }
+          .logo-container {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+          }
+          .logo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
           }
           .section-title {
             font-weight: 600;
@@ -256,11 +279,19 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
       </head>
       <body>
         <div class="header">
-          <div>
-            <div class="section-title">Client</div>
-            <div class="info">
-              ${clientInput || "Nom du client"}<br/>
-              ${nomEntreprise || ""}
+          <div class="client-info-logo">
+            ${
+              logoURL
+                ? `<div class="logo-container"><img src="${logoURL}" alt="Logo client" /></div>`
+                : ""
+            }
+            <div>
+              <div class="section-title">Client</div>
+              <div class="info">
+                ${clientInput || "Nom du client"}<br/>
+                ${nomEntreprise || ""}<br/>
+                ${telephone || ""}
+              </div>
             </div>
           </div>
           <div style="text-align:right;">
@@ -268,7 +299,6 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
             25140235<br/>
             Beb bhar
           </div>
-          ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
         </div>
   
         <div class="info-blocks">
@@ -292,22 +322,34 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
             </tr>
           </thead>
           <tbody>
-            ${lignes.map((ligne) => `
+            ${lignes
+              .map(
+                (ligne) => `
               <tr>
                 <td>${ligne.designation}</td>
-                <td style="text-align:center;">${ligne.prixUnitaire.toFixed(3)} TND</td>
+                <td style="text-align:center;">${ligne.prixUnitaire.toFixed(
+                  3
+                )} TND</td>
                 <td style="text-align:center;">${ligne.quantite}</td>
-                <td style="text-align:right;">${(ligne.quantite * ligne.prixUnitaire).toFixed(3)} TND</td>
+                <td style="text-align:right;">${(
+                  ligne.quantite * ligne.prixUnitaire
+                ).toFixed(3)} TND</td>
               </tr>
-            `).join("")}
+            `
+              )
+              .join("")}
           </tbody>
         </table>
   
         <div class="totals">
           <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
-          <p><strong>Remise (${discount}%):</strong> ${discountAmount.toFixed(3)} TND</p>
+          <p><strong>Remise (${discount}%):</strong> ${discountAmount.toFixed(
+      3
+    )} TND</p>
           <p><strong>TVA (${tva}%):</strong> ${tax.toFixed(3)} TND</p>
-          <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
+          <p class="total-amount"><strong>Total :</strong> ${total.toFixed(
+            3
+          )} TND</p>
         </div>
   
         <div class="footer">
@@ -367,26 +409,29 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                           cursor: "pointer",
                         }}
                       />
-                      {logo ? (
-                        <img
-                          src={
-                            typeof logo === "string"
-                              ? `/uploads/${logo}`
-                              : URL.createObjectURL(logo)
-                          }
-                          alt="Logo"
-                          style={{
-                            maxHeight: "100%",
-                            maxWidth: "100%",
-                            objectFit: "contain",
-                          }}
-                        />
-                      ) : (
-                        <span className="text-center text-muted small">
-                          Drag logo here<br />
-                          or select a file
-                        </span>
-                      )}
+                     {logo ? (
+  <img
+    src={
+      typeof logo === "string"
+        ? logo.startsWith("data:")
+          ? logo
+          : `/uploads/${logo}`
+        : URL.createObjectURL(logo)
+    }
+    alt="Logo"
+    style={{
+      maxHeight: "100%",
+      maxWidth: "100%",
+      objectFit: "contain",
+    }}
+  />
+) : (
+  <span className="text-center text-muted small">
+    Drag logo here<br />
+    or select a file
+  </span>
+)}
+
                     </div>
                   </div>
 
