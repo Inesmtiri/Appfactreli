@@ -78,27 +78,24 @@ const FacturePage = () => {
 
   const handleViewFacture = (facture) => {
     const clientNom = facture.client?.nom || facture.client?.societe || facture.client;
-    const logoURL = facture.logo
-      ? typeof facture.logo === "string"
-        ? `/uploads/${facture.logo}`
-        : URL.createObjectURL(facture.logo)
-      : "";
-
+    const logoURL = facture.logo || "";
+  
     const remise = facture.remise || 0;
     const subtotal = facture.subtotal || 0;
     const remiseMontant = subtotal * (remise / 100);
     const tax = facture.tax || 0;
     const total = facture.total || subtotal - remiseMontant + tax;
     const tvaRate = subtotal ? ((tax / (subtotal - remiseMontant)) * 100).toFixed(0) : 19;
-
+  
     const factureHTML = `
       <html>
         <head>
           <title>Facture ${facture.numeroFacture}</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 60px; color: #2f3e4d; }
-            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-            .header img { max-width: 140px; max-height: 100px; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+            .client-info-logo { display: flex; gap: 20px; align-items: center; }
+            .client-info-logo img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
             .section-title { font-weight: 600; font-size: 14px; color: #6b7280; }
             .client-info, .facture-info { font-size: 16px; line-height: 1.6; }
             .info-blocks { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -113,11 +110,15 @@ const FacturePage = () => {
         </head>
         <body>
           <div class="header">
-            <div>
-              <div class="section-title">Client</div>
-              <div class="client-info">
-                ${clientNom || "Client"}<br/>
-                ${facture.nomEntreprise || ""}
+            <div style="display: flex; align-items: flex-start; gap: 20px; flex: 1;">
+              ${logoURL ? `<img src="${logoURL}" alt="Logo client" />` : ""}
+              <div>
+                <div class="section-title">Client</div>
+                <div class="client-info">
+                  ${clientNom || "Client"}<br/>
+                  ${facture.nomEntreprise || ""}<br/>
+                  ${facture.telephone || ""}
+                </div>
               </div>
             </div>
             <div style="text-align:right;">
@@ -125,7 +126,6 @@ const FacturePage = () => {
               Beb bhar<br/>
               251403625
             </div>
-            ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
           </div>
           <div class="info-blocks">
             <div class="facture-info"><div class="section-title">Date</div>${facture.date?.slice(0, 10) || "-"}</div>
@@ -161,13 +161,13 @@ const FacturePage = () => {
         </body>
       </html>
     `;
-
+  
     const win = window.open("", "_blank", "width=900,height=700");
     win.document.write(factureHTML);
     win.document.close();
     win.print();
   };
-
+  
   return (
     <Container className="mt-4">
       <Row className="mb-4 justify-content-end">
@@ -222,42 +222,42 @@ const FacturePage = () => {
                         <FaFileAlt />
                       </Button>
                       <Button
-  variant="outline-success"
-  size="sm"
-  onClick={() => {
-    const lignesFormatees = facture.lignes.map((l) => ({
-      itemId: l.itemId,
-      type: l.type,
-      designation: l.designation,
-      quantite: l.quantite,
-      prixUnitaire: l.prixUnitaire,
-      inputValue: `${l.designation} - ${l.prixUnitaire}`
-    }));
+                        variant="outline-success"
+                        size="sm"
+                        onClick={() => {
+                          const lignesFormatees = facture.lignes.map((l) => ({
+                            itemId: l.itemId,
+                            type: l.type,
+                            designation: l.designation,
+                            quantite: l.quantite,
+                            prixUnitaire: l.prixUnitaire,
+                            inputValue: `${l.designation} - ${l.prixUnitaire}`
+                          }));
 
-    const clientInput =
-      typeof facture.client === "object"
-        ? `${facture.client.nom} ${facture.client.prenom} - ${facture.client.societe || ""}`
-        : "";
+                          const clientInput =
+                            typeof facture.client === "object"
+                              ? `${facture.client.nom} ${facture.client.prenom} - ${facture.client.societe || ""}`
+                              : "";
 
-    const clientId =
-      typeof facture.client === "object"
-        ? facture.client._id
-        : facture.client;
+                          const clientId =
+                            typeof facture.client === "object"
+                              ? facture.client._id
+                              : facture.client;
 
-    setEditData({
-      ...facture,
-      client: clientId,
-      clientInput,
-      lignes: lignesFormatees,
-      numeroFacture: facture.numeroFacture || "",
-      logo: facture.logo || null // ✅ ici on passe le logo dans le formulaire
-    });
+                          setEditData({
+                            ...facture,
+                            client: clientId,
+                            clientInput,
+                            lignes: lignesFormatees,
+                            numeroFacture: facture.numeroFacture || "",
+                            logo: facture.logo || null
+                          });
 
-    setShowForm(true);
-  }}
->
-  <FaPen />
-</Button>
+                          setShowForm(true);
+                        }}
+                      >
+                        <FaPen />
+                      </Button>
 
                       <Button variant="outline-danger" size="sm" onClick={() => handleDeleteFacture(facture._id)}>
                         <FaTrash />

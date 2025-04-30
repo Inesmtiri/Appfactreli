@@ -17,7 +17,14 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const [tvaRate, setTvaRate] = useState(editData?.tvaRate || 19);
   const [remise, setRemise] = useState(editData?.remise || 0);
   const [modePaiement, setModePaiement] = useState(editData?.modePaiement || "Espèces");
-  const [logo, setLogo] = useState(null);
+  const [logo, setLogo] = useState(editData?.logo || null);
+
+  useEffect(() => {
+    if (editData?.logo) {
+      setLogo(editData.logo);
+    }
+  }, [editData]);
+  
   const [lignes, setLignes] = useState(
     editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
   );
@@ -141,6 +148,7 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
       nomEntreprise,
       telephone,
       envoyée: true,
+      logo,
     };
 
     try {
@@ -160,24 +168,25 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const handlePrint = async () => {
     const logoURL = logo
       ? typeof logo === "string"
-        ? logo.startsWith("data:") ? logo : `/uploads/${logo}`
+        ? logo
         : await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);
             reader.readAsDataURL(logo);
           })
       : "";
-
+  
     const clientInfo = clients.find(c => c._id === clientId);
-
+  
     const html = `
     <html>
       <head>
         <title>Facture ${numeroFacture}</title>
         <style>
           body { font-family: 'Arial', sans-serif; margin: 60px; color: #2f3e4d; }
-          .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-          .header img { max-width: 140px; max-height: 100px; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+          .client-info-logo { display: flex; gap: 20px; align-items: center; }
+          .client-info-logo img { max-width: 80px; max-height: 80px; border-radius: 6px; border: 1px solid #ccc; }
           .section-title { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
           .info, .facture-info { font-size: 16px; line-height: 1.6; }
           .info-blocks { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -192,11 +201,14 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
       </head>
       <body>
         <div class="header">
-          <div>
-            <div class="section-title">Client</div>
-            <div class="info">
-              ${clientInfo?.nom || "Client"} ${clientInfo?.prenom || ""}<br/>
-              ${nomEntreprise || ""}
+          <div class="client-info-logo">
+            ${logoURL ? `<img src="${logoURL}" alt="Logo client">` : ""}
+            <div>
+              <div class="section-title">Client</div>
+              <div class="info">
+                ${clientInfo?.nom || "Client"} ${clientInfo?.prenom || ""}<br/>
+                ${nomEntreprise || ""}
+              </div>
             </div>
           </div>
           <div style="text-align:right;">
@@ -204,7 +216,6 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
             25140235<br/>
             Beb bhar
           </div>
-          ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
         </div>
         <div class="info-blocks">
           <div class="facture-info">
@@ -245,15 +256,14 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
       </body>
     </html>
     `;
-
+  
     const win = window.open("", "_blank", "width=900,height=700");
     win.document.write(html);
     win.document.close();
     win.focus();
     win.print();
   };
-
-
+  
 
   
   
