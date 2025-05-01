@@ -4,28 +4,35 @@ import {
   getAllDevis,
   updateDevis,
   deleteDevis,
-  envoyerDevis, // 👈 ajouter cette fonction si besoin
-  getDevisByClient // 👈 si tu veux lister les devis par client
+  envoyerDevis,
+  getDevisByClient,
+  getKpiDevis,
+  getDerniersDevis,
+  getTotalDevis //  KPI
 } from "../controllers/devisController.js";
 
 const router = express.Router();
 
-// ➕ Créer un devis
+//  KPI - Taux devis acceptés / refusés / en attente
+router.get("/kpi", getKpiDevis);
+
+//  Créer un devis
 router.post("/", ajouterDevis);
 
-// 📄 Lister tous les devis
+// Lister tous les devis
 router.get("/", getAllDevis);
 
-// 📄 Lister les devis par client (interface client)
-router.get("/client/:clientId", getDevisByClient); // ex: /api/devis/client/123456
+//  Lister les devis par client
+router.get("/client/:clientId", getDevisByClient);
 
-// ✏️ Modifier un devis
+//  Modifier un devis
 router.put("/:id", updateDevis);
 
-// 📤 Marquer un devis comme envoyé
-router.put("/:id/envoyer", envoyerDevis); // facultatif si tu veux séparer le bouton envoyer
+//  Marquer un devis comme envoyé
+router.put("/:id/envoyer", envoyerDevis);
 
-// ❌ Supprimer un devis
+//  Supprimer un devis
 router.delete("/:id", deleteDevis);
-
+router.get("/recents", getDerniersDevis);
+router.get("/total", getTotalDevis); 
 export default router;

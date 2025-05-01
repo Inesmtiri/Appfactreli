@@ -3,14 +3,27 @@ import {
   creerDepense,
   getDepenses,
   modifierDepense,
-  supprimerDepense
+  supprimerDepense,
+  getStatsDepensesMensuelles,
+  getTotalDepenses // ✅ Nouveau import
 } from '../controllers/depenseController.js';
 
 const router = express.Router();
 
+// ➕ Créer une dépense
 router.post('/', creerDepense);
+
+// 📄 Lister toutes les dépenses
 router.get('/', getDepenses);
+
+// 📈 Obtenir les dépenses mensuelles (KPI)
+router.get('/stats-mensuelles', getStatsDepensesMensuelles); // ✅ Nouvelle route
+
+// ✏️ Modifier une dépense
 router.put('/:id', modifierDepense);
+
+// ❌ Supprimer une dépense
 router.delete('/:id', supprimerDepense);
 
+router.get("/total", getTotalDepenses);
 export default router;

@@ -169,3 +169,57 @@ async function getNextDevisNumber() {
   );
   return counter.seq.toString().padStart(6, "0");
 }
+// ✅ Obtenir les KPI devis
+export const getKpiDevis = async (req, res) => {
+  try {
+    // On ne compte que les devis "accepté", "refusé" et "en attente"
+    const [total, acceptés, refusés, enAttente] = await Promise.all([
+      Devis.countDocuments({ statut: { $in: ["accepté", "refusé", "en attente"] } }),
+      Devis.countDocuments({ statut: "accepté" }),
+      Devis.countDocuments({ statut: "refusé" }),
+      Devis.countDocuments({ statut: "en attente" }),
+    ]);
+
+    // Pour éviter division par 0
+    const base = total || 1;
+
+    res.json({
+      total,
+      acceptés,
+      refusés,
+      enAttente,
+      taux: {
+        acceptés: ((acceptés / base) * 100).toFixed(1),
+        refusés: ((refusés / base) * 100).toFixed(1),
+        enAttente: ((enAttente / base) * 100).toFixed(1),
+      },
+    });
+  } catch (error) {
+    console.error("Erreur KPI devis :", error);
+    res.status(500).json({ message: "Erreur lors du calcul des KPI devis" });
+  }
+};
+// ✅ Derniers devis (limite 10, triés par date descendante)
+export const getDerniersDevis = async (req, res) => {
+  try {
+    const derniers = await Devis.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select("numeroDevis client date statut");
+
+    res.json(derniers);
+  } catch (error) {
+    console.error("Erreur chargement derniers devis :", error);
+    res.status(500).json({ message: "Erreur lors du chargement des derniers devis" });
+  }
+};
+// ✅ Total des devis (nombre)
+export const getTotalDevis = async (req, res) => {
+  try {
+    const total = await Devis.countDocuments();
+    res.json({ total });
+  } catch (error) {
+    console.error("Erreur total devis :", error);
+    res.status(500).json({ message: "Erreur chargement total devis" });
+  }
+};

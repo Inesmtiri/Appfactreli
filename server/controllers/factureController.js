@@ -1,6 +1,7 @@
 import Facture from "../models/facture.js";
 import Produit from "../models/Produit.js"; // Gestion des stocks
-
+import Paiement from "../models/Paiement.js";
+import Depense from "../models/depense.js";
 // ➕ Créer une facture
 export const ajouterFacture = async (req, res) => {
   try {
@@ -168,5 +169,120 @@ export const envoyerFacture = async (req, res) => {
   } catch (error) {
     console.error("❌ Erreur lors de l'envoi de la facture :", error);
     res.status(500).json({ message: "Erreur envoi facture." });
+  }
+};
+export const getStatsFacturesParStatut = async (req, res) => {
+  try {
+    const factures = await Facture.find();
+    const paiements = await Paiement.aggregate([
+      {
+        $group: {
+          _id: "$facture",
+          montantTotal: { $sum: "$montant" },
+        },
+      },
+    ]);
+
+    const paiementsMap = new Map();
+    paiements.forEach((p) => {
+      paiementsMap.set(p._id.toString(), p.montantTotal);
+    });
+
+    const moisNoms = [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+    ];
+
+    const statsParMois = {};
+
+    factures.forEach((facture) => {
+      const moisIndex = new Date(facture.date).getMonth();
+      const mois = moisNoms[moisIndex];
+      const total = facture.total;
+      const montantPayé = paiementsMap.get(facture._id.toString()) || 0;
+
+      let statut = "nonPayé";
+      if (montantPayé >= total) statut = "payé";
+      else if (montantPayé > 0) statut = "partiel";
+
+      if (!statsParMois[mois]) {
+        statsParMois[mois] = { mois, payé: 0, partiel: 0, nonPayé: 0 };
+      }
+
+      statsParMois[mois][statut]++;
+    });
+
+    const result = Object.values(statsParMois).sort(
+      (a, b) => moisNoms.indexOf(a.mois) - moisNoms.indexOf(b.mois)
+    );
+
+    res.json(result);
+  } catch (err) {
+    console.error("❌ Erreur stats factures :", err);
+    res.status(500).json({ message: "Erreur lors de l'agrégation" });
+  }
+};
+// 📊 Agrégation des produits/services les plus rentables
+export const getProduitsServicesRentables = async (req, res) => {
+  try {
+    const factures = await Facture.find({}, "lignes");
+
+    const revenusMap = new Map();
+
+    // Parcours de toutes les lignes de toutes les factures
+    factures.forEach(facture => {
+      facture.lignes.forEach(ligne => {
+        const key = `${ligne.designation}-${ligne.type}`;
+        const previous = revenusMap.get(key) || {
+          designation: ligne.designation,
+          type: ligne.type,
+          quantite: 0,
+          revenu: 0,
+        };
+
+        previous.quantite += ligne.quantite;
+        previous.revenu += ligne.quantite * ligne.prixUnitaire;
+
+        revenusMap.set(key, previous);
+      });
+    });
+
+    const result = Array.from(revenusMap.values());
+
+    res.json(result);
+  } catch (error) {
+    console.error("❌ Erreur agrégation rentabilité :", error);
+    res.status(500).json({ message: "Erreur lors de l'agrégation des produits/services." });
+  }
+};
+// ✅ Obtenir le total des factures
+export const getTotalFactures = async (req, res) => {
+  try {
+    const total = await Facture.countDocuments();
+    res.json({ total });
+  } catch (err) {
+    console.error("Erreur total factures :", err);
+    res.status(500).json({ message: "Erreur lors du calcul du total des factures" });
+  }
+};
+export const getTotalProfit = async (req, res) => {
+  try {
+    const [factureAgg, depenseAgg] = await Promise.all([
+      Facture.aggregate([
+        { $group: { _id: null, total: { $sum: "$total" } } },
+      ]),
+      Depense.aggregate([
+        { $group: { _id: null, total: { $sum: "$montant" } } },
+      ]),
+    ]);
+
+    const totalFactures = factureAgg[0]?.total || 0;
+    const totalDepenses = depenseAgg[0]?.total || 0;
+    const profit = totalFactures - totalDepenses;
+
+    res.json({ profit, totalFactures, totalDepenses });
+  } catch (err) {
+    console.error("❌ Erreur calcul profit :", err);
+    res.status(500).json({ message: "Erreur lors du calcul du profit" });
   }
 };

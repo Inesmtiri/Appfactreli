@@ -74,3 +74,37 @@ export const getPaiements = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// 🔁 Revenus par mois
+export const getStatsPaiementsMensuels = async (req, res) => {
+  try {
+    const stats = await Paiement.aggregate([
+      {
+        $match: {
+          datePaiement: { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$datePaiement" },
+          total: { $sum: "$montant" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const moisNoms = [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ];
+
+    const result = stats.map(s => ({
+      mois: moisNoms[s._id - 1],
+      total: s.total
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error("Erreur agrégation paiements :", error);
+    res.status(500).json({ message: "Erreur stats paiements mensuels" });
+  }
+};

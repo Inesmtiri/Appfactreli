@@ -57,3 +57,41 @@ export const supprimerDepense = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+export const getStatsDepensesMensuelles = async (req, res) => {
+  try {
+    const stats = await Depense.aggregate([
+      {
+        $group: {
+          _id: { $month: "$date" },
+          total: { $sum: "$montant" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    const moisNoms = [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ];
+
+    const result = stats.map(s => ({
+      mois: moisNoms[s._id - 1],
+      total: s.total
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error("Erreur agrégation dépenses :", error);
+    res.status(500).json({ message: "Erreur stats dépenses mensuelles" });
+  }
+};
+export const getTotalDepenses = async (req, res) => {
+  try {
+    const depenses = await Depense.find();
+    const total = depenses.reduce((sum, d) => sum + d.montant, 0);
+    res.json({ total });
+  } catch (err) {
+    console.error("Erreur total dépenses :", err);
+    res.status(500).json({ message: "Erreur lors du calcul des dépenses" });
+  }
+};

@@ -1,5 +1,5 @@
 import express from "express";
-import Facture from "../models/facture.js"; // ✅ tu avais oublié cette ligne
+import Facture from "../models/facture.js"; // ✅ Modèle de facture
 
 import {
   ajouterFacture,
@@ -7,11 +7,15 @@ import {
   updateFacture,
   deleteFacture,
   envoyerFacture,
+  getStatsFacturesParStatut,        // ✅ Histogramme empilé
+  getProduitsServicesRentables ,// ✅ Diagramme à bulles (nouveau)
+  getTotalFactures ,
+  getTotalProfit     
 } from "../controllers/factureController.js";
 
 const router = express.Router();
 
-// Ajouter une facture
+// ➕ Ajouter une facture
 router.post("/", async (req, res) => {
   try {
     console.log("📥 Facture reçue :", req.body);
@@ -24,19 +28,23 @@ router.post("/", async (req, res) => {
   }
 });
 
-
-
-// Récupérer toutes les factures
+// 📄 Récupérer toutes les factures
 router.get("/", getAllFactures);
 
-// Modifier une facture
+// ✏️ Modifier une facture
 router.put("/:id", updateFacture);
 
-// Supprimer une facture
+// ❌ Supprimer une facture
 router.delete("/:id", deleteFacture);
 
-// Envoyer une facture (changer le statut à "envoyé")
+// 📤 Envoyer une facture (changer le statut à "envoyé")
 router.patch("/:id/envoyer", envoyerFacture);
 
+// 📊 Statistiques mensuelles par statut (histogramme empilé)
+router.get("/statut-mensuel", getStatsFacturesParStatut);
 
+// 📈 Produits/services les plus rentables (diagramme à bulles)
+router.get("/produits-rentables", getProduitsServicesRentables);
+router.get("/total", getTotalFactures);
+router.get("/profit", getTotalProfit);
 export default router;
