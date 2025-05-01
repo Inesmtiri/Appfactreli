@@ -1,3 +1,4 @@
+// models/depense.js
 import mongoose from 'mongoose';
 
 const depenseSchema = new mongoose.Schema(
@@ -19,19 +20,20 @@ const depenseSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
+      default: "",
     },
     commercant: {
       type: String,
       trim: true,
+      default: "",
     },
     image: {
-      type: String, // base64 ou URL d’un fichier
+      type: String,
       default: "",
+      trim: true, // 🔵 Optionnel : trim pour enlever espaces dans base64 ou url
     },
   },
   { timestamps: true }
 );
 
-const Depense = mongoose.model('Depense', depenseSchema);
-
-export default Depense;
+export default mongoose.model('Depense', depenseSchema);

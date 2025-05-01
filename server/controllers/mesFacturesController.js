@@ -1,68 +1,36 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import Facture from "../models/facture.js";
 
-export default function MesFacturesClient() {
-  const [factures, setFactures] = useState([]);
-  const navigate = useNavigate();
+// 📥 Toutes les factures envoyées à un client donné
+export const getFacturesByClient = async (req, res) => {
+  try {
+    const factures = await Facture.find({
+      client: req.params.clientId,
+      envoyée: true,
+    })
+      .sort({ createdAt: -1 })
+      .populate("client");
 
-  useEffect(() => {
-    const fetchFactures = async () => {
-      try {
-        const client = JSON.parse(localStorage.getItem("user")); // récupère l'ID du client
-        const res = await axios.get(`http://localhost:3001/api/mes-factures/${client.id}`);
-        setFactures(res.data);
-      } catch (err) {
-        console.error("Erreur lors du chargement des factures :", err);
-      }
-    };
+    res.status(200).json(factures);
+  } catch (error) {
+    console.error("❌ Erreur récupération factures client :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
 
-    fetchFactures();
-  }, []);
+// 🔴 Factures impayées du client
+export const getFacturesImpayeesClient = async (req, res) => {
+  try {
+    const clientId = req.params.id;
+    const factures = await Facture.find({
+      client: clientId,
+      envoyée: true,
+    });
 
-  return (
-    <div className="container mt-4">
-      <h2 className="mb-4">📄 Mes factures reçues</h2>
+    const impayees = factures.filter((facture) => facture.statut !== "payé");
 
-      {factures.length === 0 ? (
-        <p>Vous n'avez encore reçu aucune facture.</p>
-      ) : (
-        <table className="table table-hover table-bordered">
-          <thead className="table-dark">
-            <tr>
-              <th>#</th>
-              <th>Référence</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Statut</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {factures.map((facture, index) => (
-              <tr key={facture._id}>
-                <td>{index + 1}</td>
-                <td>{facture.reference}</td>
-                <td>{new Date(facture.date).toLocaleDateString()}</td>
-                <td>{facture.total} TND</td>
-                <td>
-                  <span className={`badge ${facture.statut === "payé" ? "bg-success" : "bg-danger"}`}>
-                    {facture.statut}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={() => navigate(`/client/facture/${facture._id}`)}
-                  >
-                    Voir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
+    res.status(200).json(impayees);
+  } catch (error) {
+    console.error("❌ Erreur récupération factures impayées :", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};

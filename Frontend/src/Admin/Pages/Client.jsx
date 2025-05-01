@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { FaTrash, FaPen } from "react-icons/fa";
 import ClientForm from "../components/ClientForm";
 import { Button, Table } from "react-bootstrap";
+import { SearchContext } from "../../context/SearchContext"; // 📌 adapte le chemin selon ton projet
 
 const ClientPage = () => {
   const [clients, setClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null);
+  const { searchTerm } = useContext(SearchContext); // 🔍 récupère ce que tape l'utilisateur
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -21,13 +24,26 @@ const ClientPage = () => {
     fetchClients();
   }, []);
 
+  // 🔍 Met à jour la liste filtrée quand clients ou recherche changent
+  useEffect(() => {
+    const term = searchTerm.toLowerCase();
+    const result = clients.filter((client) =>
+      `${client.nom} ${client.prenom} ${client.email} ${client.societe} ${client.telephone}`
+        .toLowerCase()
+        .includes(term)
+    );
+    setFilteredClients(result);
+  }, [searchTerm, clients]);
+
   const handleAddClient = async (clientData) => {
     try {
       const res = await axios.post("http://localhost:3001/api/clients", clientData);
-      setClients([...clients, res.data]);
-      setShowForm(false);
+      const updatedList = [...clients, res.data];
+      setClients(updatedList);
     } catch (error) {
       console.error("❌ Erreur création client :", error);
+    } finally {
+      setShowForm(false);
     }
   };
 
@@ -47,13 +63,17 @@ const ClientPage = () => {
 
   const handleUpdateClient = async (updatedClient) => {
     try {
-      const res = await axios.put(`http://localhost:3001/api/clients/${updatedClient._id}`, updatedClient);
+      const res = await axios.put(
+        `http://localhost:3001/api/clients/${updatedClient._id}`,
+        updatedClient
+      );
       const updatedList = clients.map((c) => (c._id === res.data._id ? res.data : c));
       setClients(updatedList);
-      setShowForm(false);
       setClientToEdit(null);
     } catch (error) {
       console.error("❌ Erreur mise à jour client :", error);
+    } finally {
+      setShowForm(false);
     }
   };
 
@@ -112,8 +132,8 @@ const ClientPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {clients.length > 0 ? (
-                  clients.map((client) => (
+                {filteredClients.length > 0 ? (
+                  filteredClients.map((client) => (
                     <tr key={client._id}>
                       <td>{client.nom}</td>
                       <td>{client.prenom}</td>
@@ -146,7 +166,7 @@ const ClientPage = () => {
                 ) : (
                   <tr>
                     <td colSpan="6" className="text-center text-muted">
-                      Aucun client enregistré.
+                      Aucun client trouvé.
                     </td>
                   </tr>
                 )}

@@ -68,7 +68,7 @@ export default function Connexion() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button className="btn btn-primary w-100 p-3 rounded-4" type="submit">
+          <button className="btn btn-vert w-100 p-3 rounded-4" type="submit">
             Connexion
           </button>
         </form>

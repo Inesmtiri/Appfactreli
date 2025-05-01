@@ -8,6 +8,7 @@ import Connexion from './Admin/Pages/Connexion';
 import About from './Admin/Pages/About';
 import ForgotPassword from "./Admin/Pages/ForgotPassword";
 import ResetPassword from "./Admin/Pages/ResetPassword";
+import { SearchProvider } from "./context/SearchContext";
 
 // ✅ Pages internes (admin)
 import Dashboard from './Admin/Pages/Dashboard';
@@ -21,11 +22,11 @@ import Paiement from './Admin/Pages/Paiement';
 
 
 
+
 // ✅ Layout global admin
 import Layout from './Admin/components/Layout';
 
 // ✅ Interface CLIENT
-import LayoutClient from './Clients/Components/LayoutClient';
 import DashboardClient from './Clients/Pages/DashboardClient';
 import MesDevis from './Clients/Pages/MesDevis';
 import MesFacture from './Clients/Pages/MesFacture';
@@ -33,9 +34,11 @@ import MesFacture from './Clients/Pages/MesFacture';
 
 function App() {
   return (
+    <SearchProvider>
+
     <BrowserRouter>
       <Routes>
-
+     
         {/* ✅ Pages publiques */}
         <Route index element={<WelcomePage />} />
         <Route path="inscription" element={<Inscription />} />
@@ -56,10 +59,7 @@ function App() {
           <Route path="paiement" element={<Paiement />} />
           
 
-        </Route>
-
-        {/* ✅ Interface CLIENT */}
-        <Route element={<LayoutClient />}>
+      
           <Route path="client/dashboard" element={<DashboardClient />} />
           <Route path="client/mes-devis" element={<MesDevis />} />
           <Route path="client/mes-factures" element={<MesFacture />} />
@@ -68,6 +68,7 @@ function App() {
 
       </Routes>
     </BrowserRouter>
+    </SearchProvider>
   );
 }
 

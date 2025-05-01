@@ -37,7 +37,7 @@ app.use('/api/factures', factureRoutes);
 app.use('/api/depenses', depenseRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/client/devis', clientDevisRoutes);
+app.use('/api/mes-devis', clientDevisRoutes);
 app.use('/api/mes-factures', mesFacturesRoutes); // ✅ maintenant fonctionne
 
 // 🌐 Route de test

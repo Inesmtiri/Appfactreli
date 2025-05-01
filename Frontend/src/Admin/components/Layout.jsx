@@ -1,72 +1,52 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import SidebarClient from "../../Clients/Components/SidebarClient";
 import Navbar from "./Navbar";
 import { Modal, Button } from "react-bootstrap";
-import { FaTachometerAlt } from "react-icons/fa";
 
 const Layout = () => {
   const navigate = useNavigate();
-
-  const [activeModule, setActiveModule] = useState({
-    name: "Dashboard",
-    icon: <FaTachometerAlt />,
-  });
-
+  const user = JSON.parse(localStorage.getItem("userData"));
   const [showLogout, setShowLogout] = useState(false);
 
   const handleLogout = () => {
     setShowLogout(false);
+    localStorage.removeItem("userData");
     navigate("/login");
   };
 
+  const CurrentSidebar = user?.role === "client" ? SidebarClient : Sidebar;
+
   return (
     <div style={{ backgroundColor: "#fff" }}>
-      {/* Sidebar positionnée en fixed à gauche */}
-      <Sidebar
-        activeModule={activeModule}
-        setActiveModule={setActiveModule}
-      />
+      {/* Sidebar */}
+      <CurrentSidebar />
 
-      {/* Contenu principal avec une marge à gauche pour ne pas passer sous la sidebar */}
+      {/* Contenu principal */}
       <div
         style={{
-          marginLeft: "230px", // même largeur que la sidebar
+          marginLeft: "230px",
           display: "flex",
           flexDirection: "column",
           minHeight: "100vh",
         }}
       >
-        <Navbar
-          activeModule={activeModule}
-          onLogout={() => setShowLogout(true)}
-        />
+        {/* Navbar */}
+        <Navbar onLogout={() => setShowLogout(true)} />
 
-        <div
-          style={{
-            flex: 1,
-            padding: "20px",
-            marginTop: "60px", // hauteur de la navbar si elle est fixe
-            backgroundColor: "#fff",
-          }}
-        >
+        <div style={{ flex: 1, padding: "20px", marginTop: "60px", backgroundColor: "#fff" }}>
           <Outlet />
         </div>
       </div>
 
-      {/* Modal de confirmation logout */}
+      {/* Modal de confirmation de déconnexion */}
       <Modal show={showLogout} backdrop="static" keyboard={false} centered>
-        <Modal.Header>
-          <Modal.Title>Déconnexion</Modal.Title>
-        </Modal.Header>
+        <Modal.Header><Modal.Title>Déconnexion</Modal.Title></Modal.Header>
         <Modal.Body>Êtes-vous sûr de vouloir vous déconnecter ?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowLogout(false)}>
-            Annuler
-          </Button>
-          <Button variant="danger" onClick={handleLogout}>
-            Confirmer
-          </Button>
+          <Button variant="secondary" onClick={() => setShowLogout(false)}>Annuler</Button>
+          <Button variant="danger" onClick={handleLogout}>Confirmer</Button>
         </Modal.Footer>
       </Modal>
     </div>

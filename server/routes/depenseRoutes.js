@@ -22,8 +22,10 @@ router.get('/stats-mensuelles', getStatsDepensesMensuelles); // ✅ Nouvelle rou
 // ✏️ Modifier une dépense
 router.put('/:id', modifierDepense);
 
-// ❌ Supprimer une dépense
+
 router.delete('/:id', supprimerDepense);
 
+
 router.get("/total", getTotalDepenses);
+
 export default router;

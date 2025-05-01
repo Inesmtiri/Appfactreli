@@ -9,8 +9,7 @@ const SidebarClient = () => {
   const menuItems = [
     { name: "Dashboard", icon: <FaTachometerAlt />, path: "/client/dashboard" },
     { name: "Mes Devis", icon: <FaFileAlt />, path: "/client/mes-devis" },
-    { name: "Mes Factures", icon: <FaFileAlt />, path: "/client/mes-factures" }
-
+    { name: "Mes Factures", icon: <FaFileAlt />, path: "/client/mes-factures" },
   ];
 
   return (
