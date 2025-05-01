@@ -4,6 +4,8 @@ import {
   getDevisDetails,
   acceptDevis,
   refuseDevis,
+  getDevisEnAttenteClient,
+
 } from "../controllers/clientDevisController.js";
 
 const router = express.Router();
@@ -19,5 +21,6 @@ router.put("/:id/accept", acceptDevis);
 
 // ❌ Refuser un devis
 router.put("/:id/refuse", refuseDevis);
+router.get("/client/en-attente/:id", getDevisEnAttenteClient);
 
 export default router;

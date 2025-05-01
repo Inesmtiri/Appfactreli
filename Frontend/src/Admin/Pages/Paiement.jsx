@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { SearchContext } from "../../context/SearchContext"; // ⚠️ adapte le chemin si besoin
 
 const API_URL = "http://localhost:3001/api/paiements";
 
 const Paiement = () => {
+  const { searchTerm } = useContext(SearchContext); // 🔍 Champ global de recherche
   const [paiements, setPaiements] = useState([]);
+  const [filteredPaiements, setFilteredPaiements] = useState([]);
   const [factures, setFactures] = useState([]);
   const [formData, setFormData] = useState({
     facture: "",
@@ -16,9 +19,13 @@ const Paiement = () => {
   });
   const [editId, setEditId] = useState(null);
   const [montantRestant, setMontantRestant] = useState(0);
-
-  const [query, setQuery] = useState(""); // champ recherche
+  const [query, setQuery] = useState(""); // pour la recherche locale dans le champ "facture"
   const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    fetchPaiements();
+    fetchFactures();
+  }, []);
 
   const fetchPaiements = async () => {
     try {
@@ -39,9 +46,20 @@ const Paiement = () => {
   };
 
   useEffect(() => {
-    fetchPaiements();
-    fetchFactures();
-  }, []);
+    const term = searchTerm.toLowerCase();
+    const filtered = paiements.filter((p) => {
+      const client = p.facture?.client;
+      const nomClient =
+        typeof client === "object"
+          ? `${client.nom} ${client.prenom} ${client.societe || ""}`
+          : client;
+
+      return `${p.facture?.numeroFacture || ""} ${nomClient || ""} ${p.datePaiement || ""}`
+        .toLowerCase()
+        .includes(term);
+    });
+    setFilteredPaiements(filtered);
+  }, [searchTerm, paiements]);
 
   useEffect(() => {
     if (query.length > 0) {
@@ -135,6 +153,7 @@ const Paiement = () => {
 
   return (
     <div className="container py-4">
+      {/* Formulaire ajout/modif paiement */}
       <div className="p-4 bg-white rounded shadow-sm mb-4 mx-auto" style={{ maxWidth: "1000px" }}>
         <h5 className="mb-4 fw-bold text-dark">
           <i className="bi bi-plus-circle me-2"></i>
@@ -234,7 +253,7 @@ const Paiement = () => {
         </form>
       </div>
 
-      {/* Liste des paiements */}
+      {/* ✅ Liste des paiements filtrée dynamiquement */}
       <div className="p-4 bg-white rounded shadow-sm mx-auto" style={{ maxWidth: "1000px" }}>
         <h5 className="mb-3 fw-bold text-dark">
           <i className="bi bi-list-check me-2"></i>
@@ -257,12 +276,12 @@ const Paiement = () => {
               </tr>
             </thead>
             <tbody>
-              {paiements.length === 0 ? (
+              {filteredPaiements.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center text-muted">Aucun paiement trouvé.</td>
                 </tr>
               ) : (
-                paiements.map((p) => (
+                filteredPaiements.map((p) => (
                   <tr key={p._id}>
                     <td>{p.facture?.numeroFacture || "–"}</td>
                     <td>{p.datePaiement ? new Date(p.datePaiement).toLocaleDateString() : "-"}</td>

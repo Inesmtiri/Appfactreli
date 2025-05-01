@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
+import { SearchContext } from "../../context/SearchContext"; // 🔍 à adapter selon ton projet
 
 export default function MesFacturesClient() {
+  const { searchTerm } = useContext(SearchContext); // 🔍 champ de recherche global
   const [factures, setFactures] = useState([]);
 
   useEffect(() => {
     const fetchFactures = async () => {
       try {
-        const client = JSON.parse(localStorage.getItem("user"));
-        if (!client || !client.id) {
-        const client = JSON.parse(localStorage.getItem("userData"));
-
-        if (!client || !client._id) {
+        let client = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData"));
+        if (!client || (!client.id && !client._id)) {
           console.warn("❌ Aucun client connecté ou ID manquant dans localStorage");
           return;
         }
 
-        const res = await axios.get(`http://localhost:3001/api/mes-factures/${client.id}`);
+        const clientId = client.id || client._id;
+        const res = await axios.get(`http://localhost:3001/api/mes-factures/${clientId}`);
         setFactures(res.data);
       } catch (err) {
         console.error("❌ Erreur lors du chargement des factures :", err);
@@ -25,6 +25,12 @@ export default function MesFacturesClient() {
 
     fetchFactures();
   }, []);
+
+  const filteredFactures = factures.filter((facture) =>
+    `${facture.reference} ${facture.total} ${facture.date} ${facture.statut}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   const handleViewFacture = (facture) => {
     const clientNom = facture.client?.nom || facture.client?.societe || "Client";
@@ -78,11 +84,13 @@ export default function MesFacturesClient() {
             </div>
             ${logoURL ? `<img src="${logoURL}" alt="Logo">` : ""}
           </div>
+
           <div class="info-blocks">
             <div class="facture-info"><div class="section-title">Date</div>${facture.date?.slice(0, 10) || "-"}</div>
             <div class="facture-info"><div class="section-title">N° Facture</div>${facture.numeroFacture}</div>
             <div class="facture-info"><div class="section-title">Référence</div>${facture.reference}</div>
           </div>
+
           <table>
             <thead>
               <tr>
@@ -98,16 +106,18 @@ export default function MesFacturesClient() {
                   <td>${l.designation}</td>
                   <td style="text-align:center;">${l.prixUnitaire.toFixed(3)} TND</td>
                   <td style="text-align:center;">${l.quantite}</td>
-                  <td style="text-align:right;">${(l.quantite * l.prixUnitaire).toFixed(3)} TND</td>
+                  <td style="text-align:right;">${(l.prixUnitaire * l.quantite).toFixed(3)} TND</td>
                 </tr>`).join("")}
             </tbody>
           </table>
+
           <div class="totals">
             <p><strong>Sous-total :</strong> ${subtotal.toFixed(3)} TND</p>
             <p><strong>Remise (${remise}%):</strong> ${remiseMontant.toFixed(3)} TND</p>
             <p><strong>TVA (${tvaRate}%):</strong> ${tax.toFixed(3)} TND</p>
             <p class="total-amount"><strong>Total :</strong> ${total.toFixed(3)} TND</p>
           </div>
+
           <div class="footer">Merci pour votre confiance – Facterli</div>
         </body>
       </html>
@@ -123,13 +133,13 @@ export default function MesFacturesClient() {
     <div className="container mt-4">
       <h2 className="mb-4">📄 Mes factures reçues</h2>
 
-      {factures.length === 0 ? (
+      {filteredFactures.length === 0 ? (
         <div className="alert alert-info">
-          Vous n'avez encore reçu <strong>aucune facture</strong> ou les factures ne sont pas encore envoyées.
+          Aucune facture trouvée.
         </div>
       ) : (
         <div className="d-flex flex-wrap gap-4">
-          {factures.map((facture) => (
+          {filteredFactures.map((facture) => (
             <div
               key={facture._id}
               className="card text-center shadow-sm"
@@ -141,12 +151,11 @@ export default function MesFacturesClient() {
                 <p className="mb-1">Company</p>
                 <p className="text-muted">{new Date(facture.date).toLocaleDateString()}</p>
                 <hr />
-                <p className="fw-bold">{facture.total} TND</p>
-
+                <p className="fw-bold">{facture.total?.toFixed(3)} TND</p>
                 <span
                   className={`badge w-100 py-2 ${
                     facture.statut === "payé"
-                      ? "btn-vert"
+                      ? "bg-success"
                       : facture.statut === "partiellement payé"
                       ? "bg-warning text-dark"
                       : "bg-danger"

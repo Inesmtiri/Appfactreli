@@ -88,7 +88,7 @@ const Sidebar = () => {
         ))}
       </ul>
 
-      {/* ✅ Footer optionnel */}
+      {/* ✅ Footer */}
       {!collapsed && (
         <div className="mt-auto text-center small">
           <span>&copy; 2025 Facterli</span>

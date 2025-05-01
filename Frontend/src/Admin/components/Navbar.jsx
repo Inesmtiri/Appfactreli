@@ -1,38 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect, useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   FaSignOutAlt,
   FaSearch,
+  FaUserEdit,
+  FaUser,
   FaTachometerAlt,
-  FaUsers,
   FaUserTie,
   FaFileAlt,
   FaProjectDiagram,
   FaMoneyBillWave,
   FaShoppingCart,
   FaBox,
-  FaUserEdit,
-  FaUser,
 } from "react-icons/fa";
-import axios from "axios";
+
 import EditAdressePasswordModal from "./EditProfileModal";
 import EditClientProfileModal from "../../Clients/Components/EditClientProfileModal";
+import { SearchContext } from "../../context/SearchContext"; // 📌 adapte ce chemin si besoin
 
-const routeToModule = {
-  "/dashboard": { name: "Dashboard", icon: <FaTachometerAlt /> },
-  "/utilisateurs": { name: "Utilisateurs", icon: <FaUsers /> },
-  "/client": { name: "Client", icon: <FaUserTie /> },
-  "/devis": { name: "Devis", icon: <FaFileAlt /> },
-  "/factures": { name: "Facture", icon: <FaFileAlt /> },
-  "/paiement": { name: "Paiement", icon: <FaMoneyBillWave /> },
-  "/projets": { name: "Projet", icon: <FaProjectDiagram /> },
-  "/depenses": { name: "Depenses", icon: <FaShoppingCart /> },
-  "/produits": { name: "Produit et services", icon: <FaBox /> },
-};
-
-const Navbar = ({ onLogout, onSearch }) => {
-  const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState("");
+const Navbar = ({ onLogout }) => {
+  const { searchTerm, setSearchTerm } = useContext(SearchContext); // 🔍 global search
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [user, setUser] = useState({
@@ -43,26 +30,32 @@ const Navbar = ({ onLogout, onSearch }) => {
     role: "",
   });
 
+  const location = useLocation();
   const menuRef = useRef();
+
+  const routeToModule = {
+    "/dashboard": { name: "Dashboard", icon: <FaTachometerAlt /> },
+    "/client": { name: "Client", icon: <FaUserTie /> },
+    "/devis": { name: "Devis", icon: <FaFileAlt /> },
+    "/factures": { name: "Facture", icon: <FaFileAlt /> },
+    "/paiement": { name: "Paiement", icon: <FaMoneyBillWave /> },
+    "/depenses": { name: "Depenses", icon: <FaShoppingCart /> },
+    "/produits": { name: "Produit et services", icon: <FaBox /> },
+    "/projets": { name: "Projet", icon: <FaProjectDiagram /> },
+
+    // Routes côté client
+    "/client/dashboard": { name: "Dashboard", icon: <FaTachometerAlt /> },
+    "/client/mes-devis": { name: "Mes Devis", icon: <FaFileAlt /> },
+    "/client/mes-factures": { name: "Mes Factures", icon: <FaFileAlt /> },
+  };
+
+  const activeModule = routeToModule[location.pathname] || { name: "", icon: null };
 
   const getInitials = () => {
     const f = user.prenom?.[0]?.toUpperCase() || "";
     const l = user.nom?.[0]?.toUpperCase() || "";
     return f + l;
   };
-
-  const activeModule = routeToModule[location.pathname];
-
-  const handleClickOutside = (e) => {
-    if (menuRef.current && !menuRef.current.contains(e.target)) {
-      setMenuOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("userData");
@@ -71,8 +64,16 @@ const Navbar = ({ onLogout, onSearch }) => {
     }
   }, []);
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
-  const handleSearchClick = () => onSearch && onSearch(searchTerm);
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const handleProfileClick = () => {
     setShowProfileModal(true);
@@ -99,13 +100,13 @@ const Navbar = ({ onLogout, onSearch }) => {
           borderBottom: "1px solid #eee",
         }}
       >
-        {/* Titre page */}
+        {/* 🧠 Module actif */}
         <div className="d-flex align-items-center gap-2 text-dark">
           {activeModule?.icon}
           <span className="fst-italic fw-semibold">{activeModule?.name}</span>
         </div>
 
-        {/* Recherche + Profil */}
+        {/* 🔍 Recherche + Profil */}
         <div className="d-flex align-items-center gap-3">
           <div className="input-group" style={{ width: "300px" }}>
             <input
@@ -113,12 +114,11 @@ const Navbar = ({ onLogout, onSearch }) => {
               className="form-control"
               placeholder="Recherche..."
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <span
               className="input-group-text"
-              style={{ cursor: "pointer", backgroundColor: "#ffffff" }}
-              onClick={handleSearchClick}
+              style={{ cursor: "default", backgroundColor: "#ffffff" }}
             >
               <FaSearch />
             </span>
@@ -151,7 +151,7 @@ const Navbar = ({ onLogout, onSearch }) => {
                 }}
               >
                 <div className="px-3 pt-3 pb-2 border-bottom fw-bold text-dark small">
-                  compte
+                  Compte
                 </div>
                 <button
                   className="w-100 text-start border-0 bg-transparent px-3 py-2 d-flex align-items-center gap-2 hoverable"

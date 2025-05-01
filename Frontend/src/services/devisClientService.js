@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3001/api/client/devis";
+const API_URL = "http://localhost:3001/api/mes-devis";
 
 export const fetchDevisClient = async (clientId) => {
   const res = await axios.get(`${API_URL}/${clientId}`);

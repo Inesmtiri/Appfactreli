@@ -48,3 +48,12 @@ export const refuseDevis = async (req, res) => {
     res.status(500).json({ error: "Erreur lors du refus du devis." });
   }
 };
+export const getDevisEnAttenteClient = async (req, res) => {
+  try {
+    const clientId = req.params.id;
+    const devis = await Devis.find({ clientId, statut: "en attente" });
+    res.status(200).json(devis);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur récupération devis" });
+  }
+};

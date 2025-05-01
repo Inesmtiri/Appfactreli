@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   Container,
   Row,
@@ -13,8 +13,11 @@ import AddProduitModal from "../components/Produits/AddProduit";
 import AddServiceModal from "../components/Produits/AddService";
 import ProduitServiceTabs from "../components/Produits/ProduitServiceTabs";
 import axios from "axios";
+import { SearchContext } from "../../context/SearchContext"; // ⚠️ adapte le chemin si besoin
 
 const ProduitServicePage = () => {
+  const { searchTerm } = useContext(SearchContext); // 🔍 recherche globale
+
   const [activeTab, setActiveTab] = useState("produits");
 
   const [showAddProduitModal, setShowAddProduitModal] = useState(false);
@@ -22,14 +25,34 @@ const ProduitServicePage = () => {
 
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
-
   const [produitEnCours, setProduitEnCours] = useState(null);
   const [serviceEnCours, setServiceEnCours] = useState(null);
+
+  const [filteredProduits, setFilteredProduits] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
 
   useEffect(() => {
     fetchProduits();
     fetchServices();
   }, []);
+
+  useEffect(() => {
+    const term = searchTerm.toLowerCase();
+
+    const produitsFiltres = produits.filter((p) =>
+      `${p.reference} ${p.categorie} ${p.stockActuel}`
+        .toLowerCase()
+        .includes(term)
+    );
+    const servicesFiltres = services.filter((s) =>
+      `${s.nom} ${s.description}`
+        .toLowerCase()
+        .includes(term)
+    );
+
+    setFilteredProduits(produitsFiltres);
+    setFilteredServices(servicesFiltres);
+  }, [searchTerm, produits, services]);
 
   const fetchProduits = async () => {
     try {
@@ -99,6 +122,8 @@ const ProduitServicePage = () => {
     }
   };
 
+  const dataToDisplay = activeTab === "produits" ? filteredProduits : filteredServices;
+
   return (
     <Container className="mt-4">
       <Row className="mb-4 justify-content-end">
@@ -123,7 +148,7 @@ const ProduitServicePage = () => {
           {activeTab === "produits" ? "Liste des produits" : "Liste des services"}
         </h5>
 
-        {(activeTab === "produits" ? produits.length : services.length) > 0 ? (
+        {dataToDisplay.length > 0 ? (
           <Table responsive className="align-middle text-center table-striped">
             <thead className="bg-light text-muted">
               <tr>
@@ -134,7 +159,7 @@ const ProduitServicePage = () => {
               </tr>
             </thead>
             <tbody>
-              {(activeTab === "produits" ? produits : services).map((item) => (
+              {dataToDisplay.map((item) => (
                 <tr key={item._id}>
                   <td className="text-start fw-semibold">
                     {activeTab === "produits" ? item.reference : item.nom}
@@ -166,7 +191,6 @@ const ProduitServicePage = () => {
                             setShowAddServiceModal(true);
                           }
                         }}
-                        
                       >
                         <FaPen />
                       </Button>
@@ -189,12 +213,11 @@ const ProduitServicePage = () => {
           </Table>
         ) : (
           <p className="text-center text-muted">
-            Aucun {activeTab === "produits" ? "produit" : "service"} trouvé pour l’instant.
+            Aucun {activeTab === "produits" ? "produit" : "service"} trouvé.
           </p>
         )}
       </Card>
 
-      {/* Modals */}
       <AddProduitModal
         show={showAddProduitModal}
         onHide={() => {
