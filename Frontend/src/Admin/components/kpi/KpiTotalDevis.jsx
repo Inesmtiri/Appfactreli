@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import KpiCard from "./KpiCard";
-import { FaFileAlt } from "react-icons/fa";
+import { FaFileContract } from "react-icons/fa";
 
 const KpiTotalDevis = () => {
   const [total, setTotal] = useState(0);
@@ -20,12 +19,17 @@ const KpiTotalDevis = () => {
   }, []);
 
   return (
-    <KpiCard
-      title="Total des Devis"
-      value={total}
-      icon={<FaFileAlt />}
-      iconBg="#198754"
-    />
+    <div className="card shadow-sm border-0 h-100">
+      <div className="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <p className="text-muted mb-1">Total des Devis</p>
+          <h4 className="fw-bold mb-0">{total.toLocaleString("fr-FR")}</h4>
+        </div>
+        <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ backgroundColor: "#6610f2", width: 44, height: 44 }}>
+          <FaFileContract className="text-white fs-5" />
+        </div>
+      </div>
+    </div>
   );
 };
 

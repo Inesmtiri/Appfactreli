@@ -11,47 +11,42 @@ import KpiTotalDevis from "../components/kpi/KpiTotalDevis";
 import KpiTotalDepenses from "../components/kpi/KpiTotalDepenses";
 import KpiClientsActifs from "../components/kpi/KpiClientsActifs";
 import KpiTotalProfit from "../components/kpi/KpiTotalProfit";
+
 const Dashboard = () => {
   return (
-    <div className="container py-4">
-      <h4 className="text-center mb-5">📊 Tableau de bord</h4>
-
-      {/* Section KPI horizontaux */}
-      <div className="row mb-5">
-        <KpiTotalFactures />
-        <KpiTotalDevis />
-        <KpiTotalDepenses />
-        <KpiClientsActifs />
-        <KpiTotalProfit />
-        {/* Tu peux ajouter ici d'autres KPI, comme Dépenses ou Clients actifs */}
+    <div className="container py-111">
+      {/* KPI - 5 cartes alignées en flex */}
+      <div className="kpi-row mb-4">
+        <div className="kpi-item"><KpiTotalFactures /></div>
+        <div className="kpi-item"><KpiTotalDevis /></div>
+        <div className="kpi-item"><KpiTotalDepenses /></div>
+        <div className="kpi-item"><KpiClientsActifs /></div>
+        <div className="kpi-item"><KpiTotalProfit /></div>
       </div>
 
-      {/* Graphique KPI Devis en camembert */}
-      <div className="row justify-content-center mb-5">
-        <div className="col-md-8">
-          <div className="card shadow-sm border-0">
+      {/* 📊 3 premiers graphiques alignés horizontalement */}
+      <div className="d-flex flex-wrap justify-content-between mb-4 align-items-start">
+        {/* 📈 Revenus */}
+        <div style={{ width: "33%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 250 }}>
             <div className="card-body p-3">
-              <KpiDevisChart />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Courbe revenus/dépenses/profit */}
-      <div className="row justify-content-center mb-5">
-        <div className="col-md-10">
-          <div className="card shadow-sm border-0">
-            <div className="card-body">
               <RevenueProfitChart />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Histogramme factures par statut */}
-      <div className="row justify-content-center mb-5">
-        <div className="col-md-10">
-          <div className="card shadow-sm border-0">
+        {/* 🟢 Taux des devis */}
+        <div style={{ width: "33%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 250 }}>
+            <div className="card-body d-flex align-items-center justify-content-center">
+              <KpiDevisChart />
+            </div>
+          </div>
+        </div>
+
+        {/* 📊 Statut des factures */}
+        <div style={{ width: "33%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 250}}>
             <div className="card-body">
               <FactureStatusChart />
             </div>
@@ -59,21 +54,24 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Diagramme à bulles produits/services rentables */}
-      <div className="row justify-content-center mb-5">
-        <div className="col-md-10">
-          <div className="card shadow-sm border-0">
+      {/* 📋 Derniers Devis + 📈 Produits Rentables côte à côte */}
+      <div className="d-flex flex-wrap justify-content-between mb-4">
+        {/* Derniers Devis */}
+        <div style={{ width: "48%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 250, overflowY: "auto" }}>
+            <div className="card-body">
+              <DerniersDevisTable />
+            </div>
+          </div>
+        </div>
+
+        {/* Produits & Services rentables */}
+        <div style={{ width: "48%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 300 }}>
             <div className="card-body">
               <ProduitRentableChart />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Tableau des 10 derniers devis */}
-      <div className="row justify-content-center mb-4">
-        <div className="col-md-10">
-          <DerniersDevisTable />
         </div>
       </div>
     </div>

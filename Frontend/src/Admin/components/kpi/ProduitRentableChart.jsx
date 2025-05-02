@@ -12,7 +12,6 @@ import {
   ZAxis,
 } from "recharts";
 
-// 🎨 Palette fixe de couleurs
 const PALETTE = [
   "#007bff", "#17a2b8", "#ffc107", "#28a745", "#dc3545",
   "#6f42c1", "#fd7e14", "#6610f2", "#20c997", "#e83e8c",
@@ -50,29 +49,29 @@ const ProduitRentableChart = () => {
     return <p className="text-center">Chargement du graphique...</p>;
 
   return (
-    <div style={{ width: "100%", maxWidth: 960, margin: "0 auto" }}>
-      <h5 className="text-center mt-4 mb-3">
+    <div style={{ width: "100%" }}>
+      <h6 className="text-center mb-2">
         💎 Produits & Services les plus rentables
-      </h5>
+      </h6>
 
-      <ResponsiveContainer width="100%" height={450}>
-        <ScatterChart margin={{ top: 20, right: 40, bottom: 60, left: 40 }}>
+      <ResponsiveContainer width="100%" height={250}>
+        <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 30 }}>
           <CartesianGrid vertical={false} horizontal={false} />
 
           <XAxis
             type="category"
             dataKey="designation"
-            tick={{ fontSize: 13 }}
+            tick={{ fontSize: 11 }}
             interval={0}
             axisLine={false}
             tickLine={false}
-            height={60}
+            height={50}
           />
           <YAxis
             type="number"
             dataKey="revenu"
             name="Revenu (DT)"
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
@@ -80,8 +79,9 @@ const ProduitRentableChart = () => {
             type="number"
             dataKey="quantite"
             name="Quantité vendue"
-            range={[100, 400]}
+            range={[100, 200]} // ✅ taille réduite
           />
+
           <Tooltip
             formatter={(value, name) =>
               name === "quantite"
@@ -99,22 +99,14 @@ const ProduitRentableChart = () => {
               color: item.color,
               id: item.designation,
             }))}
-            wrapperStyle={{ textAlign: "center", fontSize: 13 }}
+            wrapperStyle={{ textAlign: "center", fontSize: 12 }}
           />
 
           <Scatter
             data={data}
-            shape={(props) => {
-              const { cx, cy, size, payload } = props;
-              return (
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={Math.sqrt(size)}
-                  fill={payload.color}
-                />
-              );
-            }}
+            shape={({ cx, cy, size, payload }) => (
+              <circle cx={cx} cy={cy} r={Math.sqrt(size)} fill={payload.color} />
+            )}
           />
         </ScatterChart>
       </ResponsiveContainer>

@@ -22,7 +22,7 @@ const RevenueProfitChart = () => {
           axios.get("/api/depenses/stats-mensuelles"),
         ]);
 
-        const paiements = paiementsRes.data; // [{ mois: "Janvier", total: 3000 }]
+        const paiements = paiementsRes.data;
         const depenses = depensesRes.data;
 
         const fusion = paiements.map((p) => {
@@ -46,9 +46,9 @@ const RevenueProfitChart = () => {
   }, []);
 
   return (
-    <div style={{ width: "100%", maxWidth: 800, margin: "0 auto" }}>
-      <h5 className="text-center mt-5">📈 Revenus, Dépenses & Profits Mensuels</h5>
-      <ResponsiveContainer width="100%" height={350}>
+    <div style={{ width: "100%" }}>
+      <h6 className="text-center mb-2">📈 Revenus, Dépenses & Profits</h6>
+      <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="mois" />

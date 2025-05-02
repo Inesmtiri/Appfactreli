@@ -7,7 +7,9 @@ const DashboardClient = () => {
   const [nbFactures, setNbFactures] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const clientId = JSON.parse(localStorage.getItem("user"))?.id;
+  // ✅ Gestion robuste du client ID (compatibilité "user" ou "userData")
+  const clientData = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData"));
+  const clientId = clientData?.id || clientData?._id;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,16 +18,23 @@ const DashboardClient = () => {
           axios.get(`http://localhost:3001/api/mes-devis/client/en-attente/${clientId}`),
           axios.get(`http://localhost:3001/api/mes-factures/client/impayees/${clientId}`)
         ]);
+
         setNbDevis(devisRes.data.length);
         setNbFactures(facturesRes.data.length);
-        setLoading(false);
       } catch (error) {
-        console.error("Erreur dashboard client :", error);
+        console.error("❌ Erreur dashboard client :", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (clientId) fetchData();
+    if (clientId) {
+      console.log("🔍 ID du client détecté :", clientId);
+      fetchData();
+    } else {
+      console.warn("❌ Aucun client ID trouvé dans localStorage");
+      setLoading(false);
+    }
   }, [clientId]);
 
   if (loading) {
@@ -38,8 +47,6 @@ const DashboardClient = () => {
 
   return (
     <Container className="mt-4">
-     
-
       <Row className="g-4">
         <Col md={6}>
           <Card className="text-center shadow-sm">

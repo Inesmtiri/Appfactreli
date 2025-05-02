@@ -13,7 +13,7 @@ const COLORS = ["#28a745", "#dc3545", "#ffc107"];
 
 const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }) => {
   const RADIAN = Math.PI / 180;
-  const radius = outerRadius + 10;
+  const radius = outerRadius + 8;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -24,7 +24,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }) => {
       fill="#000"
       textAnchor={x > cx ? "start" : "end"}
       dominantBaseline="central"
-      fontSize={13}
+      fontSize={12}
       fontWeight="bold"
     >
       {`${(percent * 100).toFixed(1)}%`}
@@ -56,16 +56,16 @@ const KpiDevisChart = () => {
   if (!data.length) return <p>Chargement...</p>;
 
   return (
-    <div style={{ width: "100%", maxWidth: 450, margin: "0 auto" }}>
-      <h5 className="text-center mt-4">📊 Taux des devis</h5>
-      <ResponsiveContainer width="100%" height={320}>
+    <div style={{ width: "100%" }}>
+      <h6 className="text-center mb-2">📊 Taux des devis</h6>
+      <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={70}
-            outerRadius={100}
+            innerRadius={50}
+            outerRadius={75}
             labelLine={false}
             label={renderCustomizedLabel}
             dataKey="value"
@@ -79,7 +79,7 @@ const KpiDevisChart = () => {
             verticalAlign="bottom"
             iconType="circle"
             formatter={(value, entry, index) => (
-              <span style={{ color: COLORS[index], fontWeight: 500, fontSize: 14 }}>
+              <span style={{ color: COLORS[index], fontWeight: 500, fontSize: 13 }}>
                 {value}
               </span>
             )}
