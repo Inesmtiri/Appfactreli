@@ -15,8 +15,8 @@ const DashboardClient = () => {
     const fetchData = async () => {
       try {
         const [devisRes, facturesRes] = await Promise.all([
-          axios.get(`http://localhost:3001/api/mes-devis/client/en-attente/${clientId}`),
-          axios.get(`http://localhost:3001/api/mes-factures/client/impayees/${clientId}`)
+          axios.get(`https://facterli-server-4.onrender.com/api/mes-devis/client/en-attente/${clientId}`),
+          axios.get(`https://facterli-server-4.onrender.com/api/mes-factures/client/impayees/${clientId}`)
         ]);
 
         setNbDevis(devisRes.data.length);

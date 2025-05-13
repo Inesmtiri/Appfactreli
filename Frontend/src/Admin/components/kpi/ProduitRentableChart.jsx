@@ -3,115 +3,110 @@ import axios from "axios";
 import {
   ResponsiveContainer,
   ScatterChart,
+  Scatter,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  Scatter,
   ZAxis,
 } from "recharts";
 
-const PALETTE = [
-  "#007bff", "#17a2b8", "#ffc107", "#28a745", "#dc3545",
-  "#6f42c1", "#fd7e14", "#6610f2", "#20c997", "#e83e8c",
+// 🎨 Couleurs pastel
+const pastelColors = [
+  "#A0E7E5", "#B4F8C8", "#FFAEBC", "#FBE7C6", "#CDB4DB",
+  "#D8F3DC", "#FFD6A5", "#CAF0F8", "#FFADAD", "#B5EAD7"
 ];
 
-const ProduitRentableChart = () => {
+// ✅ Tooltip sécurisé
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0]?.payload;
+    return (
+      <div className="p-2 shadow-sm bg-white border rounded">
+        <strong>{data?.nom || "Produit inconnu"}</strong><br />
+        Catégorie : {data?.type || "—"}<br />
+        Profit : {typeof data?.profit === "number" ? data.profit.toLocaleString() + " €" : "N/A"}
+      </div>
+    );
+  }
+  return null;
+};
+
+const ProduitRentableBubbleChart = () => {
   const [data, setData] = useState([]);
-  const [colors, setColors] = useState({});
+  const [legendItems, setLegendItems] = useState([]);
 
   useEffect(() => {
-    const fetchRentables = async () => {
+    const fetchStats = async () => {
       try {
         const res = await axios.get("/api/factures/produits-rentables");
-        const formatted = res.data.map((item, index) => ({
+        const itemCount = res.data.length;
+        const totalWidth = 40; // largeur totale en % pour répartir les bulles
+        const startX = 50 - (totalWidth / 2); // début centré autour de 50
+
+        const transformed = res.data.map((item, index) => ({
           ...item,
-          color: PALETTE[index % PALETTE.length],
+          x: startX + (index * (totalWidth / Math.max(itemCount - 1, 1))),
+          y: 50, // aligné verticalement
+          z: typeof item.profit === "number" ? item.profit : 0,
+          color: pastelColors[index % pastelColors.length],
         }));
 
-        const colorMap = {};
-        formatted.forEach((item) => {
-          colorMap[item.designation] = item.color;
-        });
-
-        setData(formatted);
-        setColors(colorMap);
+        setData(transformed);
+        setLegendItems(transformed);
       } catch (err) {
-        console.error("Erreur chargement rentabilité :", err);
+        console.error("Erreur chargement produits rentables :", err);
       }
     };
 
-    fetchRentables();
+    fetchStats();
   }, []);
 
-  if (!data.length)
-    return <p className="text-center">Chargement du graphique...</p>;
-
   return (
-    <div style={{ width: "100%" }}>
-      <h6 className="text-center mb-2">
-        💎 Produits & Services les plus rentables
+    <>
+      <h6 className="card-title mb-3">
+         Produits les plus rentables (par profit)
       </h6>
 
-      <ResponsiveContainer width="100%" height={250}>
-        <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 30 }}>
-          <CartesianGrid vertical={false} horizontal={false} />
-
-          <XAxis
-            type="category"
-            dataKey="designation"
-            tick={{ fontSize: 11 }}
-            interval={0}
-            axisLine={false}
-            tickLine={false}
-            height={50}
-          />
-          <YAxis
-            type="number"
-            dataKey="revenu"
-            name="Revenu (DT)"
-            tick={{ fontSize: 11 }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <ZAxis
-            type="number"
-            dataKey="quantite"
-            name="Quantité vendue"
-            range={[100, 200]} // ✅ taille réduite
-          />
-
-          <Tooltip
-            formatter={(value, name) =>
-              name === "quantite"
-                ? `${value} unités`
-                : `${value.toLocaleString()} `
-            }
-            labelFormatter={(label) => `Produit / Service : ${label}`}
-          />
-
-          <Legend
-            verticalAlign="bottom"
-            payload={data.map((item) => ({
-              value: item.designation,
-              type: "circle",
-              color: item.color,
-              id: item.designation,
-            }))}
-            wrapperStyle={{ textAlign: "center", fontSize: 12 }}
-          />
-
-          <Scatter
-            data={data}
-            shape={({ cx, cy, size, payload }) => (
-              <circle cx={cx} cy={cy} r={Math.sqrt(size)} fill={payload.color} />
-            )}
-          />
+      <ResponsiveContainer width="100%" height={200}>
+        <ScatterChart>
+          <XAxis dataKey="x" type="number" hide domain={[0, 100]} />
+          <YAxis dataKey="y" type="number" hide domain={[0, 100]} />
+          <ZAxis dataKey="z" range={[200, 2000]} name="Profit (€)" />
+          <Tooltip content={<CustomTooltip />} />
+          {data.map((entry, idx) => (
+            <Scatter
+              key={idx}
+              data={[entry]}
+              fill={entry.color}
+              shape="circle"
+            />
+          ))}
         </ScatterChart>
       </ResponsiveContainer>
-    </div>
+
+      {/* ✅ Légende propre */}
+      <div className="d-flex flex-wrap mt-3 px-2">
+        {legendItems.map((item, idx) => (
+          <div
+            key={idx}
+            className="d-flex align-items-center me-3 mb-2"
+            style={{ fontSize: "0.9rem" }}
+          >
+            <div
+              style={{
+                backgroundColor: item.color,
+                width: 14,
+                height: 14,
+                borderRadius: "50%",
+                marginRight: 6,
+              }}
+            ></div>
+            {item.nom}
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 
-export default ProduitRentableChart;
+export default ProduitRentableBubbleChart;

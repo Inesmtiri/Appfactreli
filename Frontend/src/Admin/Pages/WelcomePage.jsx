@@ -13,7 +13,7 @@ function WelcomePage() {
       {/* Header */}
       <header
         className="d-flex justify-content-between align-items-center px-4 py-3 shadow-sm"
-        style={{ backgroundColor: "#167db8" }}
+        style={{ backgroundColor: "#4dabf7" }}
       >
         <h4
           style={{
@@ -32,27 +32,17 @@ function WelcomePage() {
             Connexion
           </button>
 
-          <button
-            className="btn"
-            style={{
-              backgroundColor: vertVif,
-              color: "#fff",
-              fontWeight: "bold",
-            }}
-            onClick={() => navigate("/Inscription")}
-          >
-            Inscription
-          </button>
+          
         </div>
       </header>
 
       {/* Section principale */}
       <main
         className="text-center text-white py-5"
-        style={{ backgroundColor: "#167db8" }}
+        style={{ backgroundColor: "#4dabf7" }}
       >
         <h2 className="fs-2 fw-bold mb-4">
-          Des devis aux paiements tout en un clic !
+          Dès devis aux paiements tout en un clic !
         </h2>
 
         <button
@@ -64,10 +54,9 @@ function WelcomePage() {
             padding: "10px 30px",
             borderRadius: "8px",
           }}
-          onClick={() => navigate("/Inscription")}
+          onClick={() => navigate("/Login")}
         >
-          Créer votre compte
-        </button>
+connexion </button>
       </main>
 
       {/* Image Section */}

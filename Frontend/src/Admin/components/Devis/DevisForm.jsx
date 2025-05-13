@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { FaTrash, FaPrint } from "react-icons/fa";
 
 import axios from "axios";
@@ -26,8 +26,6 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   const [tva, setTva] = useState(19);
   const [discount, setDiscount] = useState(0);
   const [showClientForm, setShowClientForm] = useState(false);
-  const printRef = useRef();
-  const selectedClient = clients.find(c => c._id === clientId);
   const [lignes, setLignes] = useState(
     editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
   );
@@ -68,7 +66,7 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
     if (!editData) {
       generateNumeroDevis(); // Appelle uniquement en mode création
     }
-  }, []);
+  }, [editData]);
 
 
   const fetchClients = () => {
@@ -92,20 +90,7 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
     ...services.map((s) => ({ _id: s._id, type: "service", nom: s.nom, prix: s.tarif })),
   ];
 
-  const handleSelectItem = (index, value) => {
-    const selected = options.find((item) => `${item.nom} - ${item.prix}` === value);
-    const updated = [...lignes];
-    if (selected) {
-      updated[index] = {
-        ...updated[index],
-        itemId: selected._id,
-        type: selected.type,
-        prixUnitaire: selected.prix,
-        designation: selected.nom,
-      };
-      setLignes(updated);
-    }
-  };
+ 
 
   const handleChange = (index, field, value) => {
     const updated = [...lignes];
@@ -368,25 +353,31 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
   
 
   const handleClientInput = (e) => {
-    const value = e.target.value;
-    setClientInput(value);
-    const matchedClient = clients.find(
-      (c) => `${c.nom} ${c.prenom} - ${c.societe}`.toLowerCase() === value.toLowerCase()
+    const val = e.target.value;
+    setClientInput(val);
+  
+    const match = clients.find(
+      (c) => `${c.nom} ${c.prenom} - ${c.societe}`.toLowerCase() === val.toLowerCase()
     );
-    if (matchedClient) {
-      setClientId(matchedClient._id);
+  
+    if (match) {
+      setClientId(match._id);
+      setClientInput(`${match.nom} ${match.prenom} `);
+      setNomEntreprise(match.societe); // Remplir le champ entreprise
+      setTelephone(match.telephone || ""); // Remplir le champ téléphone
     } else {
-      setClientId(""); // Clear si invalide
+      setClientId("");
+      setNomEntreprise(""); // Réinitialiser entreprise
+      setTelephone(""); // Réinitialiser téléphone
     }
   };
 
 
   return (
-    <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingTop: 50 }}>
-      <div className="modal-dialog modal-xl">
-        <div className="modal-content p-4">
-          <div className="modal-body" ref={printRef}>
-            <h4 className="fst-italic mb-4">Nouveau devis</h4>
+    
+    <div className="container-fluid mt-4 px-5">
+  <h4 className="mb-4">{editData ? "Modifier devis" : "Nouveau devis"}</h4>
+
             <div className="row">
               {/* ✅ Contenu devis 75% */}
               <div className="col-md-9">
@@ -474,7 +465,14 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
                       <option key={c._id} value={`${c.nom} ${c.prenom} - ${c.societe}`} />
                     ))}
                   </datalist>
-                  <button className="btn btn-link p-0" onClick={() => setShowClientForm(true)}>+ Créer un client</button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary mt-2"
+                    onClick={() => setShowClientForm(true)}
+                  >
+                    + Créer un client
+                  </button>
+  
                 </div>
 
                 {/* Infos devis */}
@@ -562,28 +560,45 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
 
               {/* ✅ Boutons à droite */}
               <div className="col-md-3 d-flex flex-column align-items-end justify-content-center gap-2">
-                <button
-                  className="btn w-75 fw-bold"
-                  style={{
-                    backgroundColor: editData ? "#ffc107" : "#23BD15",
-                    borderColor: editData ? "#ffc107" : "#23BD15",
-                    color: "#fff",
-                  }}
-                  onClick={handleSave}
-                >
-                  {editData ? "Mettre à jour" : "Envoyer"}
-                </button>
-                <button className="btn btn-outline-dark w-75" onClick={handlePrint}><FaPrint className="me-2" /> Imprimer</button>
-                <button className="btn btn-secondary w-75" onClick={onCancel}>Annuler</button>
-              </div>
-            </div>
+              <div className="col-md-3 d-flex flex-column align-items-end justify-content-center gap-2">
+  <button
+    className="btn shadow-sm rounded-pill fw-bold px-4 py-2"
+    style={{
+      backgroundColor: editData ? "#ffc107" : "#23BD15",
+      borderColor: editData ? "#ffc107" : "#23BD15",
+      color: "#fff",
+      minWidth: "150px",
+    }}
+    onClick={handleSave}
+  >
+    {editData ? "Mettre à jour" : "Envoyer"}
+  </button>
+</div>
 
+                <button
+  className="btn btn-outline-dark px-4 py-2 shadow-sm rounded-pill fw-bold"
+  style={{ minWidth: "150px" }}
+  onClick={handlePrint}
+>
+  <FaPrint className="me-2" />
+  Imprimer
+</button>
+
+                <button
+              type="button"
+              onClick={onCancel}
+              className="btn btn-outline-primary px-4 py-2 shadow-sm rounded-pill"
+              style={{ fontWeight: "bold", minWidth: "150px" }}
+            >
+              Annuler
+            </button>              </div>
+            </div>
+          
             {showClientForm && <ClientForm onClose={() => setShowClientForm(false)} onSave={handleClientCreated} />}
           </div>
-        </div>
-      </div>
-    </div>
+        
   );
 };
 
 export default DevisForm;
+

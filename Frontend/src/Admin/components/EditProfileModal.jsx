@@ -36,7 +36,7 @@ const EditAdressePasswordModal = ({ show, onClose, user = {}, onSave }) => {
     }
 
     try {
-      const response = await axios.put(`http://localhost:3001/api/users/${user._id}`, {
+      const response = await axios.put(`https://facterli-server-4.onrender.com/api/users/${user._id}`, {
         firstName,
         lastName,
         email,

@@ -223,3 +223,77 @@ export const getTotalDevis = async (req, res) => {
     res.status(500).json({ message: "Erreur chargement total devis" });
   }
 };
+
+export const getTauxConversionParMois = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const startPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    // Agrégation sur deux mois (mois courant et précédent)
+    const stats = await Devis.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startPrevMonth, $lt: endCurrentMonth }
+        }
+      },
+      {
+        $addFields: {
+          mois: { $month: "$createdAt" }
+        }
+      },
+      {
+        $group: {
+          _id: "$mois",
+          total: { $sum: 1 },
+          convertis: {
+            $sum: {
+              $cond: [{ $eq: ["$convertiEnFacture", true] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          mois: "$_id",
+          taux: {
+            $cond: [
+              { $gt: ["$total", 0] },
+              { $multiply: [{ $divide: ["$convertis", "$total"] }, 100] },
+              0
+            ]
+          }
+        }
+      },
+      { $sort: { mois: 1 } }
+    ]);
+
+    // Reformater les données pour séparer les deux mois (précédent et courant)
+    const moisActuel = now.getMonth() + 1;
+    const moisPrecedent = now.getMonth() === 0 ? 12 : now.getMonth();
+
+    const tauxCourant = stats.find((s) => s.mois === moisActuel)?.taux || 0;
+    const tauxPrecedent = stats.find((s) => s.mois === moisPrecedent)?.taux || 0;
+
+    const tendance = tauxPrecedent !== 0
+      ? ((tauxCourant - tauxPrecedent) / tauxPrecedent) * 100
+      : 0;
+
+    const variation =
+      tendance > 0 ? "en hausse" :
+      tendance < 0 ? "en baisse" : "stable";
+
+    res.json({
+      mois: `${now.getFullYear()}-${moisActuel.toString().padStart(2, "0")}`,
+      taux: tauxCourant.toFixed(1),
+      tendance: tendance.toFixed(1),
+      variation
+    });
+
+  } catch (err) {
+    console.error("❌ Erreur calcul taux conversion :", err);
+    res.status(500).json({ message: "Erreur serveur", error: err });
+  }
+};

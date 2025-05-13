@@ -53,6 +53,11 @@ const devisSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  convertiEnFacture: {
+    type: Boolean,
+    default: false,
+  },
+
 }, {
   timestamps: true,
 });

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3001/api/mes-devis";
+const API_URL = "https://facterli-server-4.onrender.com/api/mes-devis";
 
 // 🔁 Récupérer les devis du client
 export const fetchDevisClient = async (clientId) => {

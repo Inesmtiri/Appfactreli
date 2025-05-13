@@ -19,9 +19,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
     }
   }, [clientToEdit]);
 
-  const generatePassword = () => {
-    return Math.random().toString(36).slice(-8); // 🔐 8 caractères aléatoires
-  };
+  const generatePassword = () => Math.random().toString(36).slice(-8);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,13 +31,11 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
 
     const { nom, prenom, email, societe, telephone, adresse } = formClient;
 
-    // ✅ Vérifier champs vides
     if (!nom || !prenom || !email || !societe || !telephone || !adresse) {
       alert("⚠️ Tous les champs sont obligatoires.");
       return;
     }
 
-    // ✅ Vérifier numéro de téléphone (exactement 8 chiffres)
     const phoneRegex = /^[0-9]{8}$/;
     if (!phoneRegex.test(telephone)) {
       alert("📞 Le numéro de téléphone doit contenir exactement 8 chiffres.");
@@ -48,19 +44,18 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
 
     try {
       if (clientToEdit) {
-        await axios.put(`http://localhost:3001/api/clients/${formClient._id}`, formClient);
-        if (onUpdateClient) onUpdateClient(formClient);
+        await axios.put(`https://facterli-server-4.onrender.com/api/clients/${formClient._id}`, formClient);
+        onUpdateClient?.(formClient);
         alert("✅ Client modifié avec succès !");
       } else {
         const motDePasseGenere = generatePassword();
         const clientData = { ...formClient, motDePasse: motDePasseGenere };
 
-        const response = await axios.post("http://localhost:3001/api/clients", clientData);
-        if (onAddClient) onAddClient(response.data);
+        const response = await axios.post("https://facterli-server-4.onrender.com/api/clients", clientData);
+        onAddClient?.(response.data);
         alert(`✅ Client créé avec succès !\n\n🛡️ Mot de passe généré : ${motDePasseGenere}`);
       }
 
-      // ✅ Réinitialisation + fermeture
       setFormClient({
         nom: "",
         prenom: "",
@@ -71,9 +66,9 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
         motDePasse: ""
       });
 
-      if (onClose) onClose(); // ✅ ici correct
+      onClose?.(); // Ferme le formulaire
     } catch (error) {
-      if (error.response && error.response.status === 409) {
+      if (error.response?.status === 409) {
         alert("⚠️ Un client avec cet email existe déjà !");
       } else {
         console.error("Erreur :", error);
@@ -83,9 +78,12 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
   };
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <h4 style={{ marginBottom: "20px", fontWeight: "600", textAlign: "center" }}>
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center"
+      style={{ zIndex: 1055 }} // ✅ z-index élevé pour que le fond soit cliquable
+    >
+      <div className="bg-white p-4 rounded-4 shadow" style={{ width: "500px" }}>
+        <h4 className="text-center fw-semibold mb-4">
           {clientToEdit ? "Modifier le client" : "Nouveau client"}
         </h4>
 
@@ -98,7 +96,7 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
                 value={formClient[field]}
                 onChange={handleChange}
                 placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                style={inputStyle}
+                className="rounded-3"
                 required
               />
             </Form.Group>
@@ -106,74 +104,28 @@ const ClientForm = ({ onAddClient, onClose, clientToEdit, onUpdateClient }) => {
 
           <div className="d-flex justify-content-between mt-4">
             <Button
-              type="button"
-              onClick={onClose}
-              style={cancelButtonStyle}
+              variant="outline-primary"
+              className="px-4 py-2 shadow-sm fw-bold rounded-pill"
+              onClick={onClose} // ✅ fonction correcte ici
             >
               Annuler
             </Button>
 
             <Button
-              type="submit"
-              style={submitButtonStyle}
-            >
-              {clientToEdit ? "Modifier" : "Créer"}
-            </Button>
+  type="submit"
+  className="px-4 py-2 shadow fw-bold text-white rounded-pill border-0"
+  style={{
+    backgroundColor: clientToEdit ? "#ffc107" : "#00cc44", // Jaune ou Vert perso
+  }}
+>
+  {clientToEdit ? "Modifier" : "Enregistrer"}
+</Button>
+
           </div>
         </Form>
       </div>
     </div>
   );
-};
-
-// 🎨 STYLES
-const overlayStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  backgroundColor: "rgba(0, 0, 0, 0.5)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 1050,
-};
-
-const modalStyle = {
-  backgroundColor: "#fff",
-  width: "500px",
-  padding: "30px",
-  borderRadius: "12px",
-  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
-};
-
-const inputStyle = {
-  borderRadius: "8px",
-  height: "40px",
-  fontSize: "14px",
-  border: "1px solid #ced4da",
-  paddingLeft: "10px",
-};
-
-const submitButtonStyle = {
-  padding: "10px 24px",
-  borderRadius: "6px",
-  backgroundColor: "#23BD15",
-  borderColor: "#23BD15",
-  fontSize: "14px",
-  color: "#fff",
-  minWidth: "100px",
-};
-
-const cancelButtonStyle = {
-  padding: "10px 24px",
-  borderRadius: "6px",
-  backgroundColor: "#61A4D4",
-  borderColor: "#61A4D4",
-  fontSize: "14px",
-  color: "#fff",
-  minWidth: "100px",
 };
 
 export default ClientForm;

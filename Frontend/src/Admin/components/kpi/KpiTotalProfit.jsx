@@ -19,17 +19,21 @@ const KpiTotalProfit = () => {
   }, []);
 
   return (
-    <div className="card shadow-sm border-0 h-100">
-      <div className="card-body d-flex justify-content-between align-items-center">
-        <div>
-          <p className="text-muted mb-1">Total Profit</p>
-          <h4 className="fw-bold mb-0 text-success">
-            {profit.toLocaleString("fr-FR")} DT
-          </h4>
+    <div
+      className="card border-0 h-100 rounded-4"
+      style={{ background: "linear-gradient(135deg, #fff3bf, #ffe066)" }}
+    >
+      <div className="card-body d-flex flex-column align-items-center text-center">
+        <div
+          className="mb-2 d-flex align-items-center justify-content-center rounded-circle"
+          style={{ backgroundColor: "#fff3bf", width: 50, height: 50 }}
+        >
+          <FaMoneyBillWave className="text-white fs-4" />
         </div>
-        <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ backgroundColor: "#198754", width: 44, height: 44 }}>
-          <FaMoneyBillWave className="text-white fs-5" />
-        </div>
+        <p className="text-white mb-1">Total Profit</p>
+        <h4 className="fw-bold mb-0 text-white">
+          {profit.toLocaleString("fr-FR")} DT
+        </h4>
       </div>
     </div>
   );

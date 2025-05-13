@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col } from "react-bootstrap";
-import axios from "axios";
 
 const AddProduit = ({ show, onHide, onSave, produit = null }) => {
   const [formData, setFormData] = useState({
-    reference: "",
+    nom: "",
     categorie: "",
     enAchat: false,
     enVente: false,
@@ -181,20 +180,33 @@ const AddProduit = ({ show, onHide, onSave, produit = null }) => {
         </Form>
       </Modal.Body>
 
-      <Modal.Footer>
-        <Button
-          style={{ backgroundColor: "#00B507", borderColor: "#00B507" }}
-          onClick={handleSave}
-        >
-          {produit ? "Modifier" : "Créer"}
-        </Button>
-        <Button
-          style={{ backgroundColor: "#5B9BD5", borderColor: "#5B9BD5" }}
-          onClick={onHide}
-        >
-          Annuler
-        </Button>
-      </Modal.Footer>
+      <Modal.Footer className="d-flex justify-content-end gap-2">
+  {/* Bouton Annuler - même style que DevisForm */}
+  <button
+  type="button"
+  onClick={onHide}
+  className="btn fw-bold text-primary border border-primary rounded-pill px-4 py-2 shadow-sm"
+  style={{ backgroundColor: "transparent", minWidth: "150px" }}
+>
+  Annuler
+</button>
+
+
+  {/* Bouton Créer ou Modifier */}
+  <Button
+  onClick={handleSave}
+  className="shadow-sm rounded-pill fw-bold px-4 py-2 text-white"
+  style={{
+    backgroundColor: produit ? "#ffc107" : "#00B507",
+    borderColor: produit ? "#ffc107" : "#00B507",
+    minWidth: "150px",
+  }}
+>
+  {produit ? "Modifier" : "Créer"}
+</Button>
+
+</Modal.Footer>
+
     </Modal>
   );
 };

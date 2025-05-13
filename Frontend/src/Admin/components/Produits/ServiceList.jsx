@@ -8,7 +8,7 @@ const ServiceList = ({ services, onDelete }) => {
     if (!window.confirm("Confirmez-vous la suppression de ce service ?")) return;
 
     try {
-      await axios.delete(`http://localhost:3001/api/services/${id}`);
+      await axios.delete(`https://facterli-server-4.onrender.com/api/services/${id}`);
       onDelete(id); // mise à jour dans le parent
     } catch (error) {
       console.error("❌ Erreur lors de la suppression du service :", error);

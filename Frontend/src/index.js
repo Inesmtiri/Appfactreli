@@ -8,8 +8,6 @@ import'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './App.css';
 
 
-
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
@@ -17,7 +15,16 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// ✅ Masquer le preloader une fois que l'app est montée
+setTimeout(() => {
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.style.transition = 'opacity 0.5s ease';
+    preloader.style.opacity = 0;
+    setTimeout(() => {
+      preloader.style.display = 'none';
+    }, 500);
+  }
+}, 2500); // attend 1 seconde (ou ajuste selon ton besoin)
+
 reportWebVitals();

@@ -7,8 +7,8 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const [clients, setClients] = useState([]);
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
-  const [clientId, setClientId] = useState(editData?.client || "");
-  const [clientInput, setClientInput] = useState(editData?.clientInput || "");
+  const [clientId, setClientId] = useState("");
+  const [clientInput, setClientInput] = useState("");
   const [nomEntreprise, setNomEntreprise] = useState(editData?.nomEntreprise || "");
   const [telephone, setTelephone] = useState(editData?.telephone || "");
   const [date, setDate] = useState(editData?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10));
@@ -16,27 +16,16 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const [reference, setReference] = useState(editData?.reference || "");
   const [tvaRate, setTvaRate] = useState(editData?.tvaRate || 19);
   const [remise, setRemise] = useState(editData?.remise || 0);
-  const [modePaiement, setModePaiement] = useState(editData?.modePaiement || "Espèces");
   const [logo, setLogo] = useState(editData?.logo || null);
-
-  useEffect(() => {
-    if (editData?.logo) {
-      setLogo(editData.logo);
-    }
-  }, [editData]);
-  
-  const [lignes, setLignes] = useState(
-    editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]
-  );
+  const [lignes, setLignes] = useState(editData?.lignes || [{ itemId: "", type: "", quantite: 1, prixUnitaire: 0, designation: "" }]);
   const [showClientForm, setShowClientForm] = useState(false);
   const printRef = useRef();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generateNumeroFacture = async () => {
     try {
       const res = await axios.get("/api/factures");
-      const numeros = res.data
-        .map((f) => parseInt(f.numeroFacture))
-        .filter((n) => !isNaN(n));
+      const numeros = res.data.map(f => parseInt(f.numeroFacture)).filter(n => !isNaN(n));
       const max = Math.max(0, ...numeros);
       const next = (max + 1).toString().padStart(6, "0");
       setNumeroFacture(next);
@@ -53,19 +42,66 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   };
 
   useEffect(() => {
-    const initNumeroFacture = async () => {
+    const init = async () => {
+      const [clientsRes, produitsRes, servicesRes] = await Promise.all([
+        axios.get("/api/clients"),
+        axios.get("/api/produits"),
+        axios.get("/api/services"),
+      ]);
+
+      setClients(clientsRes.data);
+      setProduits(produitsRes.data);
+      setServices(servicesRes.data);
+
+      if (editData?.client) {
+        const clientObj = typeof editData.client === "object"
+          ? editData.client
+          : clientsRes.data.find(c => c._id === editData.client);
+
+        if (clientObj) {
+          setClientId(clientObj._id);
+          setClientInput(`${clientObj.nom} ${clientObj.prenom} - ${clientObj.societe || ""}`.trim());
+        }
+      } else if (editData?.clientInput) {
+        setClientInput(editData.clientInput);
+      }
+
       if (editData?.numeroFacture) {
         setNumeroFacture(editData.numeroFacture);
       } else {
         await generateNumeroFacture();
       }
     };
-    initNumeroFacture();
 
-    axios.get("/api/clients").then((res) => setClients(res.data));
-    axios.get("/api/produits").then((res) => setProduits(res.data));
-    axios.get("/api/services").then((res) => setServices(res.data));
-  }, []);
+    init();
+  }, [editData]);
+// ✅ Conversion lignes → ajout inputValue sans dépendre de "lignes"
+useEffect(() => {
+  const lignesToUpdate = [...lignes];
+
+  if ((produits.length || services.length) && lignesToUpdate.length) {
+    const combinedOptions = [
+      ...produits.map(p => ({ _id: p._id, type: "produit", nom: p.reference, prix: p.prixVente })),
+      ...services.map(s => ({ _id: s._id, type: "service", nom: s.nom, prix: s.tarif })),
+    ];
+
+    const lignesAvecInput = lignesToUpdate.map((ligne) => {
+      if (ligne.inputValue) return ligne;
+      const match = combinedOptions.find(
+        (opt) => opt._id === ligne.itemId && opt.type === ligne.type
+      );
+      return {
+        ...ligne,
+        inputValue: match ? match.nom : ligne.designation // ✅ seulement le nom
+      };
+    });
+
+    setLignes(lignesAvecInput);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [produits, services]);
+
+
 
   const options = [
     ...produits.map(p => ({ _id: p._id, type: "produit", nom: p.reference, prix: p.prixVente })),
@@ -75,28 +111,50 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   const handleClientInput = (e) => {
     const val = e.target.value;
     setClientInput(val);
-    const match = clients.find(c => `${c.nom} ${c.prenom} - ${c.societe}`.toLowerCase() === val.toLowerCase());
-    if (match) setClientId(match._id);
-    else setClientId("");
+  
+    const match = clients.find(
+      (c) => `${c.nom} ${c.prenom} - ${c.societe}`.toLowerCase() === val.toLowerCase()
+    );
+  
+    if (match) {
+      setClientId(match._id);
+      setClientInput(`${match.nom} ${match.prenom} `);
+      setNomEntreprise(match.societe); // Remplir le champ entreprise
+      setTelephone(match.telephone || ""); // Remplir le champ téléphone
+    } else {
+      setClientId("");
+      setNomEntreprise(""); // Réinitialiser entreprise
+      setTelephone(""); // Réinitialiser téléphone
+    }
   };
+  
 
   const handleSelectItem = (index, value) => {
-    const selected = options.find(opt => `${opt.nom} - ${opt.prix}` === value);
+    const selected = options.find(opt => opt.nom === value); // 🔧 seulement par nom
     const updated = [...lignes];
+  
     if (selected) {
+      const produitComplet = produits.find(p => p._id === selected._id);
+  
+      if (selected.type === "produit" && produitComplet && produitComplet.stockActuel === 0) {
+        alert(`⚠️ Le produit "${produitComplet.reference}" est en rupture de stock !`);
+      }
+  
       updated[index] = {
         ...updated[index],
         itemId: selected._id,
         type: selected.type,
         designation: selected.nom,
-        prixUnitaire: selected.prix,
-        inputValue: value
+        prixUnitaire: selected.prix, // 🔥 rempli automatiquement
+        inputValue: selected.nom     // ✅ afficher uniquement le nom
       };
     } else {
       updated[index].inputValue = value;
     }
+  
     setLignes(updated);
   };
+  
 
   const handleChange = (index, field, value) => {
     const updated = [...lignes];
@@ -129,10 +187,27 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   };
 
   const handleSave = async () => {
-    if (!clientId) return alert("Veuillez sélectionner un client.");
-    if (!reference.trim()) return alert("Référence requise !");
-    if (telephone.length !== 8 || !/^[0-9]{8}$/.test(telephone)) return alert("Téléphone invalide (8 chiffres) !");
-
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+  
+    if (!clientId || clientId.length < 10) {
+      alert("❌ Le client sélectionné est invalide !");
+      setIsSubmitting(false);
+      return;
+    }
+  
+    if (!reference.trim()) {
+      alert("Référence requise !");
+      setIsSubmitting(false);
+      return;
+    }
+  
+    if (telephone.length !== 8 || !/^[0-9]{8}$/.test(telephone)) {
+      alert("Téléphone invalide (8 chiffres) !");
+      setIsSubmitting(false);
+      return;
+    }
+  
     const facture = {
       client: clientId,
       date,
@@ -144,27 +219,30 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
       total,
       tvaRate,
       remise,
-      modePaiement,
       nomEntreprise,
       telephone,
       envoyée: true,
       logo,
+      ...(editData?.devisId && { devisId: editData.devisId }),
     };
-
+  
     try {
       const res = editData?._id
         ? await axios.put(`/api/factures/${editData._id}`, facture)
         : await axios.post("/api/factures", facture);
-
+  
       alert("✅ Facture enregistrée !");
-      onAddFacture(res.data);
+      onAddFacture(res.data, true); // ✅ on signale qu’elle est déjà créée
       onCancel();
     } catch (err) {
-      console.error("❌ Erreur :", err);
+      console.error("❌ Erreur lors de l'enregistrement :", err);
       alert("Erreur lors de l'enregistrement !");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
+  
   const handlePrint = async () => {
     const logoURL = logo
       ? typeof logo === "string"
@@ -269,14 +347,13 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
   
 
   return (
-    <div className="modal d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)", paddingTop: 50 }}>
-      <div className="modal-dialog modal-xl">
-        <div className="modal-content p-4">
-          <div className="modal-body">
+    <div className="container-fluid ">
+  <div className="row">
             <div className="row">
               {/* 🧾 Zone 75% contenu facture */}
               <div className="col-md-9" ref={printRef}>
-                <h4 className="mb-3">{editData ? "Modifier facture" : "Nouvelle facture"}</h4>
+              <h4 className="mb-3">{editData && editData._id ? "Modifier facture" : "Nouvelle facture"}</h4>
+
   
                 <div className="row mb-3">
                   <div className="col-md-3">
@@ -396,7 +473,8 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
                             />
                             <datalist id={`options-${i}`}>
                               {options.map(opt => (
-                                <option key={opt._id} value={`${opt.nom} - ${opt.prix}`} />
+                                <option key={opt._id} value={opt.nom} />
+
                               ))}
                             </datalist>
                           </td>
@@ -431,26 +509,51 @@ const FactureForm = ({ onAddFacture, onCancel, editData }) => {
 
               {/* 📎 Zone 25% boutons */}
               <div className="col-md-3 d-flex flex-column align-items-end justify-content-center gap-2">
-                              <button
-                                className="btn w-75 fw-bold"
-                                style={{
-                                  backgroundColor: editData ? "#ffc107" : "#23BD15",
-                                  borderColor: editData ? "#ffc107" : "#23BD15",
-                                  color: "#fff",
-                                }}
-                                onClick={handleSave}
-                              >
-                                {editData ? "Mettre à jour" : "Envoyer"}
-                              </button>
-                              <button className="btn btn-outline-dark w-75" onClick={handlePrint}><FaPrint className="me-2" /> Imprimer</button>
-                              <button className="btn btn-secondary w-75" onClick={onCancel}>Annuler</button>
+              {/* ✅ Bouton Enregistrer / Mettre à jour */}
+<button
+  className="btn shadow-sm rounded-pill fw-bold px-4 py-2"
+  style={{
+    backgroundColor: editData && editData._id ? "#ffc107" : "#23BD15",
+    borderColor: editData && editData._id ? "#ffc107" : "#23BD15",
+    color: "#fff",
+    minWidth: "150px",
+  }}
+  onClick={handleSave}
+  disabled={isSubmitting}
+>
+  {isSubmitting
+    ? "Enregistrement..."
+    : editData && editData._id
+    ? "Mettre à jour"
+    : "Envoyer"}
+</button>
+
+{/* ✅ Bouton Imprimer */}
+<button
+  className="btn btn-outline-dark shadow-sm rounded-pill fw-bold px-4 py-2"
+  style={{ minWidth: "150px" }}
+  onClick={handlePrint}
+>
+  <FaPrint className="me-2" />
+  Imprimer
+</button>
+
+{/* ✅ Bouton Annuler */}
+<button
+              type="button"
+              onClick={onCancel}
+              className="btn btn-outline-primary px-4 py-2 shadow-sm rounded-pill"
+              style={{ fontWeight: "bold", minWidth: "150px" }}
+            >
+              Annuler
+            </button>     
+
                             </div>
                           </div>
                           
           </div>
         </div>
-      </div>
-    </div>
+      
   );
 };
 

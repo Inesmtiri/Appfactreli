@@ -5,7 +5,7 @@ import KpiDevisChart from "../components/kpi/KpiDevisChart";
 import RevenueProfitChart from "../components/kpi/RevenueProfitChart";
 import FactureStatusChart from "../components/kpi/FactureStatusChart";
 import ProduitRentableChart from "../components/kpi/ProduitRentableChart";
-import DerniersDevisTable from "../components/kpi/DerniersDevisTable";
+import DerniersDevisTable from "../components/kpi/DernierDevisTable";
 import KpiTotalFactures from "../components/kpi/KpiTotalFactures";
 import KpiTotalDevis from "../components/kpi/KpiTotalDevis";
 import KpiTotalDepenses from "../components/kpi/KpiTotalDepenses";
@@ -27,8 +27,8 @@ const Dashboard = () => {
       {/* 📊 3 premiers graphiques alignés horizontalement */}
       <div className="d-flex flex-wrap justify-content-between mb-4 align-items-start">
         {/* 📈 Revenus */}
-        <div style={{ width: "33%" }}>
-          <div className="card shadow-sm border-0" style={{ height: 250 }}>
+        <div style={{ width: "34%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 260 }}>
             <div className="card-body p-3">
               <RevenueProfitChart />
             </div>
@@ -36,8 +36,8 @@ const Dashboard = () => {
         </div>
 
         {/* 🟢 Taux des devis */}
-        <div style={{ width: "33%" }}>
-          <div className="card shadow-sm border-0" style={{ height: 250 }}>
+        <div style={{ width: "30%" }}>
+          <div className="card shadow-sm border-0" style={{ height: 260 }}>
             <div className="card-body d-flex align-items-center justify-content-center">
               <KpiDevisChart />
             </div>
@@ -46,7 +46,7 @@ const Dashboard = () => {
 
         {/* 📊 Statut des factures */}
         <div style={{ width: "33%" }}>
-          <div className="card shadow-sm border-0" style={{ height: 250}}>
+          <div className="card shadow-sm border-0" style={{ height: 260}}>
             <div className="card-body">
               <FactureStatusChart />
             </div>

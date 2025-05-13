@@ -8,7 +8,8 @@ import {
   getDevisByClient,
   getKpiDevis,
   getDerniersDevis,
-  getTotalDevis //  KPI
+  getTotalDevis ,//  KPI
+  getTauxConversionParMois 
 } from "../controllers/devisController.js";
 
 const router = express.Router();
@@ -35,4 +36,6 @@ router.put("/:id/envoyer", envoyerDevis);
 router.delete("/:id", deleteDevis);
 router.get("/recents", getDerniersDevis);
 router.get("/total", getTotalDevis); 
+router.get("/taux-conversion", getTauxConversionParMois);
+
 export default router;

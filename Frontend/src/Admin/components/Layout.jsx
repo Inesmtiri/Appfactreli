@@ -41,14 +41,46 @@ const Layout = () => {
       </div>
 
       {/* Modal de confirmation de déconnexion */}
-      <Modal show={showLogout} backdrop="static" keyboard={false} centered>
-        <Modal.Header><Modal.Title>Déconnexion</Modal.Title></Modal.Header>
-        <Modal.Body>Êtes-vous sûr de vouloir vous déconnecter ?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowLogout(false)}>Annuler</Button>
-          <Button variant="danger" onClick={handleLogout}>Confirmer</Button>
-        </Modal.Footer>
-      </Modal>
+      <Modal
+  show={showLogout}
+  onHide={() => setShowLogout(false)} // pour activer la croix
+  backdrop="static"
+  keyboard={false}
+  centered
+>
+  <Modal.Header closeButton>
+    <Modal.Title>
+      <i className="bi bi-box-arrow-right fs-4 text-danger"></i> {/* icône seule */}
+    </Modal.Title>
+  </Modal.Header>
+
+  <Modal.Body className="text-muted text-center">
+    Vous êtes sur le point de vous déconnecter. Souhaitez-vous continuer ?
+  </Modal.Body>
+
+  <Modal.Footer className="d-flex justify-content-center border-0 pb-4 pt-0 gap-3">
+    <Button
+      onClick={() => setShowLogout(false)}
+      className="rounded-pill fw-bold px-4 py-2"
+      style={{
+        border: "2px solid #0d6efd",
+        color: "#0d6efd",
+        backgroundColor: "#e7f1ff",
+        minWidth: "140px",
+      }}
+    >
+      Annuler
+    </Button>
+    <Button
+      onClick={handleLogout}
+      className="rounded-pill px-4 py-2 fw-bold text-white"
+      style={{ backgroundColor: "#dc3545", borderColor: "#dc3545", minWidth: "130px" }}
+    >
+      Confirmer
+    </Button>
+  </Modal.Footer>
+</Modal>
+
     </div>
   );
 };

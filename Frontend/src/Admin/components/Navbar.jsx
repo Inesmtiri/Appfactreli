@@ -19,6 +19,7 @@ import EditClientProfileModal from "../../Clients/Components/EditClientProfileMo
 import { SearchContext } from "../../context/SearchContext"; // 📌 adapte ce chemin si besoin
 
 const Navbar = ({ onLogout }) => {
+  
   const { searchTerm, setSearchTerm } = useContext(SearchContext); // 🔍 global search
   const [menuOpen, setMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);

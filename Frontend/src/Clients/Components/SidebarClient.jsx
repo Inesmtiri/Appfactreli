@@ -18,7 +18,7 @@ const SidebarClient = () => {
       style={{
         width: collapsed ? "80px" : "230px",
         height: "100vh",
-        backgroundColor: "#167DB8",
+        backgroundColor: "#4dabf7",
         transition: "width 0.3s",
         overflowY: "auto",
         top: 0,

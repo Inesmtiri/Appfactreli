@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FaTachometerAlt,
-  FaUsers,
   FaUserTie,
   FaFileAlt,
   FaMoneyBillWave,
@@ -32,7 +31,7 @@ const Sidebar = () => {
       style={{
         width: collapsed ? "80px" : "230px",
         height: "100vh",
-        backgroundColor: "#167DB8",
+        backgroundColor: "#4dabf7",
         transition: "width 0.3s",
         overflowY: "auto",
         top: 0,

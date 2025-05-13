@@ -19,15 +19,15 @@ const KpiTotalFactures = () => {
   }, []);
 
   return (
-    <div className="card shadow-sm border-0 h-100">
-      <div className="card-body d-flex justify-content-between align-items-center">
-        <div>
-          <p className="text-muted mb-1">Total des Factures</p>
-          <h4 className="fw-bold mb-0">{total.toLocaleString("fr-FR")}</h4>
+    <div className="card text-white border-0 h-100 rounded-4"
+         style={{ background: "linear-gradient(135deg, #a5d8ff, #74c0fc)" }}>
+      <div className="card-body d-flex flex-column align-items-center text-center">
+        <div className="mb-2 d-flex align-items-center justify-content-center rounded-circle"
+             style={{ backgroundColor: "rgba(255,255,255,0.2)", width: 50, height: 50 }}>
+          <FaFileInvoice className="text-white fs-4" />
         </div>
-        <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ backgroundColor: "#0d6efd", width: 44, height: 44 }}>
-          <FaFileInvoice className="text-white fs-5" />
-        </div>
+        <p className="text-blue mb-1">Total Factures</p>
+        <h4 className="fw-bold mb-0">{total.toLocaleString("fr-FR")}</h4>
       </div>
     </div>
   );

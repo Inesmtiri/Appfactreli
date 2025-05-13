@@ -13,6 +13,7 @@ import {
 
 const RevenueProfitChart = () => {
   const [data, setData] = useState([]);
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -37,6 +38,11 @@ const RevenueProfitChart = () => {
         });
 
         setData(fusion);
+
+        const lastMonth = fusion[fusion.length - 1];
+        if (lastMonth && lastMonth.depenses > lastMonth.profit) {
+          setShowAlert(true);
+        }
       } catch (error) {
         console.error("Erreur chargement des données KPI :", error);
       }
@@ -47,9 +53,25 @@ const RevenueProfitChart = () => {
 
   return (
     <div style={{ width: "100%" }}>
-      <h6 className="text-center mb-2">📈 Revenus, Dépenses & Profits</h6>
+      <h6 className="text-center fw-semibold mb-3">
+         Revenus, Dépenses & Profits{" "}
+        {showAlert && (
+          <span
+            style={{
+              color: "red",
+              marginLeft: "6px",
+              fontSize: "20px",
+            }}
+          >
+            🔻
+          </span>
+        )}
+      </h6>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data}>
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="mois" />
           <YAxis />
@@ -58,21 +80,21 @@ const RevenueProfitChart = () => {
           <Line
             type="monotone"
             dataKey="revenus"
-            stroke="#28a745"
+            stroke="#339af0"
             strokeWidth={2}
             name="Revenus"
           />
           <Line
             type="monotone"
             dataKey="depenses"
-            stroke="#dc3545"
+            stroke="#fa5252"
             strokeWidth={2}
             name="Dépenses"
           />
           <Line
             type="monotone"
             dataKey="profit"
-            stroke="#ffc107"
+            stroke="#51cf66"
             strokeWidth={2}
             name="Profit"
           />

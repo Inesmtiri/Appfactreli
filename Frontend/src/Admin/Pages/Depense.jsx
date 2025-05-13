@@ -2,10 +2,11 @@ import React, { useEffect, useState, useContext } from "react";
 import { FaTrash, FaEdit } from "react-icons/fa";
 import DepenseForm from "../components/DepenceForm";
 import axios from "axios";
-import { SearchContext } from "../../context/SearchContext"; // ⚠️ adapte si nécessaire
+import { SearchContext } from "../../context/SearchContext";
+import { Card, Button, Row, Col, Table } from "react-bootstrap";
 
 const DepensePage = () => {
-  const { searchTerm } = useContext(SearchContext); // 🔍 champ global
+  const { searchTerm } = useContext(SearchContext);
   const [depenses, setDepenses] = useState([]);
   const [filteredDepenses, setFilteredDepenses] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -80,25 +81,23 @@ const DepensePage = () => {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container mt-4">
       {!showForm && (
-        <div className="d-flex justify-content-end mb-4">
-          <button
-            className="btn fw-bold"
-            onClick={() => {
-              setEditData(null);
-              setShowForm(true);
-            }}
-            style={{
-              backgroundColor: "#00B507",
-              color: "white",
-              padding: "8px 20px",
-              borderRadius: "6px",
-            }}
-          >
-            Nouvelle dépense
-          </button>
-        </div>
+        <Row className="mb-4 justify-content-end">
+          <Col xs="auto">
+          <Button
+  className="fw-bold shadow-sm rounded-pill px-4 py-2"
+  onClick={() => {
+    setEditData(null);
+    setShowForm(true);
+  }}
+  style={{ backgroundColor: "#00B507", borderColor: "#00B507", color: "#fff" }}
+>
+  Nouvelle dépense
+</Button>
+
+          </Col>
+        </Row>
       )}
 
       {showForm && (
@@ -113,54 +112,55 @@ const DepensePage = () => {
       )}
 
       {!showForm && (
-        <div className="card border-0 shadow-sm p-4 mx-auto" style={{ maxWidth: "900px" }}>
-          <h6 className="fst-italic mb-3">• Liste des dépenses :</h6>
+        <Card className="shadow-lg p-4 mx-auto border-0 rounded-4" style={{ maxWidth: "1200px" }}>
+          <h5 className="mb-4 fw-semibold text-primary">Liste des dépenses</h5>
           {filteredDepenses.length === 0 ? (
             <p className="text-center text-muted">Aucune dépense trouvée.</p>
           ) : (
-            <div className="list-group">
-              {filteredDepenses.map((depense, index) => (
-                <div
-                  key={depense._id}
-                  className={`list-group-item d-flex justify-content-between align-items-center ${index % 2 === 0 ? "bg-light" : ""}`}
-                  style={{
-                    borderRadius: "8px",
-                    border: "none",
-                    padding: "12px 16px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <div>
-                    <div className="fw-semibold fst-italic mb-1">
-                      {depense.categorie || "Sans catégorie"}
-                    </div>
-                    <small className="text-muted">
-                      {new Date(depense.date).toLocaleDateString()}
-                    </small>
-                    <p className="mb-0">{depense.description || "Pas de description"}</p>
-                  </div>
-                  <div className="d-flex align-items-center gap-3">
-                    <span className="fw-bold">{parseFloat(depense.montant).toFixed(3)} TND</span>
-                    <button
-                      className="btn btn-link text-primary p-0"
-                      onClick={() => handleEditDepense(depense)}
-                      title="Modifier"
-                    >
-                      <FaEdit size={16} />
-                    </button>
-                    <button
-                      className="btn btn-link text-dark p-0"
-                      onClick={() => handleDeleteDepense(depense._id)}
-                      title="Supprimer"
-                    >
-                      <FaTrash size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Table responsive className="align-middle text-center table-striped">
+              <thead className="bg-light text-muted">
+                <tr>
+                  <th className="text-start">Catégorie</th>
+                  <th>Date</th>
+                  <th>Montant</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDepenses.map((depense) => (
+                  <tr key={depense._id}>
+                    <td className="text-start">
+                      <div className="fw-semibold">{depense.categorie || "Sans catégorie"}</div>
+                      <div className="text-muted small fst-italic">{depense.description || "Aucune description"}</div>
+                    </td>
+                    <td>{new Date(depense.date).toLocaleDateString()}</td>
+                    <td>{parseFloat(depense.montant).toFixed(3)} TND</td>
+                    <td>
+                      <div className="d-flex justify-content-center gap-2">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          title="Modifier"
+                          onClick={() => handleEditDepense(depense)}
+                        >
+                          <FaEdit />
+                        </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          title="Supprimer"
+                          onClick={() => handleDeleteDepense(depense._id)}
+                        >
+                          <FaTrash />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

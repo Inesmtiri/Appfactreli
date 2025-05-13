@@ -8,7 +8,7 @@ const ProduitList = ({ produits, onDelete, onEdit }) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce produit ?")) return;
 
     try {
-      await axios.delete(`http://localhost:3001/api/produits/${id}`);
+      await axios.delete(`https://facterli-server-4.onrender.com/api/produits/${id}`);
       onDelete(id);
     } catch (error) {
       console.error("❌ Erreur lors de la suppression :", error);

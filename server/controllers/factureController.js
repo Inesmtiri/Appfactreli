@@ -7,14 +7,34 @@ export const ajouterFacture = async (req, res) => {
   try {
     const data = req.body;
 
-    const lignesFormatées = data.lignes.map(ligne => ({
-      itemId: ligne.itemId,
-      type: ligne.type,
-      designation: ligne.designation,
-      quantite: ligne.quantite,
-      prixUnitaire: ligne.prixUnitaire,
-    }));
+    // 🛡 Vérifications de base
+    if (!data.client) {
+      return res.status(400).json({ message: "Client manquant" });
+    }
 
+    if (!Array.isArray(data.lignes) || data.lignes.length === 0) {
+      return res.status(400).json({ message: "Aucune ligne de produit/service fournie" });
+    }
+
+    // 🧼 Nettoyage d'un éventuel _id injecté par erreur
+    delete data._id;
+
+    // ✅ Formatage des lignes
+    const lignesFormatées = data.lignes.map((ligne, index) => {
+      if (!ligne.itemId || !ligne.type || !ligne.designation || ligne.quantite == null || ligne.prixUnitaire == null) {
+        throw new Error(`Ligne ${index + 1} invalide : données manquantes`);
+      }
+
+      return {
+        itemId: ligne.itemId,
+        type: ligne.type,
+        designation: ligne.designation,
+        quantite: ligne.quantite,
+        prixUnitaire: ligne.prixUnitaire,
+      };
+    });
+
+    // ✅ Création de la facture
     const nouvelleFacture = new Facture({
       client: data.client,
       date: data.date,
@@ -32,27 +52,38 @@ export const ajouterFacture = async (req, res) => {
       telephone: data.telephone,
       statut: data.statut || "non payé",
       envoyée: data.envoyée || false,
-      logo: data.logo || "", // ✅ Logo ajouté ici
+      logo: data.logo || "",
     });
 
     const saved = await nouvelleFacture.save();
 
-    // 🛠 Mise à jour des stocks pour les produits
-    for (const ligne of data.lignes) {
+    // 🛠 Mise à jour du stock pour les produits
+    for (const ligne of lignesFormatées) {
       if (ligne.type === "produit") {
         const produit = await Produit.findById(ligne.itemId);
         if (produit) {
           produit.stockActuel = Math.max(0, produit.stockActuel - ligne.quantite);
           produit.statut = produit.stockActuel === 0 ? "rupture" : "en stock";
           await produit.save();
+        } else {
+          console.warn(`⚠ Produit non trouvé pour l'ID : ${ligne.itemId}`);
         }
       }
     }
 
+    // ✅ Marquer le devis comme converti si un devisId est fourni
+    if (data.devisId) {
+      const Devis = (await import("../models/devis.js")).default;
+      await Devis.findByIdAndUpdate(data.devisId, {
+        convertiEnFacture: true,
+      });
+    }
+
     res.status(201).json(saved);
   } catch (error) {
-    console.error("❌ Erreur ajout facture :", error);
-    res.status(500).json({ message: "Erreur lors de l'ajout de la facture." });
+    console.error("❌ Erreur ajout facture :", error.message);
+    console.error("🧠 Stack :", error.stack);
+    res.status(500).json({ message: "Erreur lors de l'ajout de la facture", error: error.message });
   }
 };
 
@@ -173,88 +204,129 @@ export const envoyerFacture = async (req, res) => {
 };
 export const getStatsFacturesParStatut = async (req, res) => {
   try {
-    const factures = await Facture.find();
-    const paiements = await Paiement.aggregate([
-      {
-        $group: {
-          _id: "$facture",
-          montantTotal: { $sum: "$montant" },
-        },
-      },
-    ]);
-
-    const paiementsMap = new Map();
-    paiements.forEach((p) => {
-      paiementsMap.set(p._id.toString(), p.montantTotal);
-    });
-
     const moisNoms = [
       "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
     ];
 
-    const statsParMois = {};
-
-    factures.forEach((facture) => {
-      const moisIndex = new Date(facture.date).getMonth();
-      const mois = moisNoms[moisIndex];
-      const total = facture.total;
-      const montantPayé = paiementsMap.get(facture._id.toString()) || 0;
-
-      let statut = "nonPayé";
-      if (montantPayé >= total) statut = "payé";
-      else if (montantPayé > 0) statut = "partiel";
-
-      if (!statsParMois[mois]) {
-        statsParMois[mois] = { mois, payé: 0, partiel: 0, nonPayé: 0 };
+    const stats = await Facture.aggregate([
+      // ➕ Extraire l’index du mois depuis createdAt
+      {
+        $addFields: {
+          moisIndex: { $month: "$createdAt" }
+        }
+      },
+      // 📊 Grouper par mois et statut
+      {
+        $group: {
+          _id: { moisIndex: "$moisIndex", statut: "$statut" },
+          count: { $sum: 1 }
+        }
+      },
+      // 🧱 Regrouper par mois (clé => valeur)
+      {
+        $group: {
+          _id: "$_id.moisIndex",
+          stats: {
+            $push: {
+              k: "$_id.statut",
+              v: "$count"
+            }
+          }
+        }
+      },
+      // 🔁 Transformer le tableau statuts => objet
+      {
+        $addFields: {
+          statObject: { $arrayToObject: "$stats" }
+        }
+      },
+      // 🎯 Reformater les champs pour affichage
+      {
+        $project: {
+          _id: 0,
+          mois: {
+            $arrayElemAt: [moisNoms, { $subtract: ["$_id", 1] }]
+          },
+          moisIndex: "$_id", // pour trier
+          payé: { $ifNull: ["$statObject.payé", 0] },
+          partiel: { $ifNull: ["$statObject.partiellement payé", 0] },
+          nonPayé: { $ifNull: ["$statObject.non payé", 0] }
+        }
+      },
+      // 📅 Tri final par moisIndex
+      {
+        $sort: { moisIndex: 1 }
       }
+    ]);
 
-      statsParMois[mois][statut]++;
-    });
+    // ❌ Optionnel : retirer moisIndex du résultat
+    const cleanStats = stats.map(({ moisIndex, ...rest }) => rest);
 
-    const result = Object.values(statsParMois).sort(
-      (a, b) => moisNoms.indexOf(a.mois) - moisNoms.indexOf(b.mois)
-    );
-
-    res.json(result);
+    res.json(cleanStats);
   } catch (err) {
-    console.error("❌ Erreur stats factures :", err);
-    res.status(500).json({ message: "Erreur lors de l'agrégation" });
+    console.error("❌ Erreur stats factures par statut :", err);
+    res.status(500).json({ message: "Erreur d'agrégation", error: err });
   }
 };
-// 📊 Agrégation des produits/services les plus rentables
+
 export const getProduitsServicesRentables = async (req, res) => {
   try {
-    const factures = await Facture.find({}, "lignes");
+    const stats = await Facture.aggregate([
+      { $unwind: "$lignes" },
+      {
+        $group: {
+          _id: "$lignes.itemId",
+          totalVendu: { $sum: "$lignes.quantite" },
+          revenuTotal: {
+            $sum: { $multiply: ["$lignes.quantite", "$lignes.prixUnitaire"] }
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "produits",
+          localField: "_id",
+          foreignField: "_id",
+          as: "produit"
+        }
+      },
+      { $unwind: "$produit" },
+      {
+        $addFields: {
+          coutTotal: { $multiply: ["$totalVendu", "$produit.prixAchat"] },
+          profit: {
+            $subtract: [
+              { $multiply: ["$totalVendu", "$produit.prixVente"] },
+              { $multiply: ["$totalVendu", "$produit.prixAchat"] }
+            ]
+          },
+          nom: "$produit.reference",
+          type: "$produit.categorie"
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          nom: 1,
+          type: 1,
+          totalVendu: 1,
+          revenuTotal: 1,
+          coutTotal: 1,
+          profit: 1,
+        }
+      },
+      { $sort: { profit: -1 } },
+      { $limit: 5 }
+    ]);
 
-    const revenusMap = new Map();
-
-    // Parcours de toutes les lignes de toutes les factures
-    factures.forEach(facture => {
-      facture.lignes.forEach(ligne => {
-        const key = `${ligne.designation}-${ligne.type}`;
-        const previous = revenusMap.get(key) || {
-          designation: ligne.designation,
-          type: ligne.type,
-          quantite: 0,
-          revenu: 0,
-        };
-
-        previous.quantite += ligne.quantite;
-        previous.revenu += ligne.quantite * ligne.prixUnitaire;
-
-        revenusMap.set(key, previous);
-      });
-    });
-
-    const result = Array.from(revenusMap.values());
-
-    res.json(result);
-  } catch (error) {
-    console.error("❌ Erreur agrégation rentabilité :", error);
-    res.status(500).json({ message: "Erreur lors de l'agrégation des produits/services." });
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur produits rentables", error: err.message });
   }
 };
+
+
 // ✅ Obtenir le total des factures
 export const getTotalFactures = async (req, res) => {
   try {
@@ -284,5 +356,31 @@ export const getTotalProfit = async (req, res) => {
   } catch (err) {
     console.error("❌ Erreur calcul profit :", err);
     res.status(500).json({ message: "Erreur lors du calcul du profit" });
+  }
+};
+// 📄 Obtenir les factures d’un client spécifique (interface client)
+export const getFacturesParClient = async (req, res) => {
+  try {
+    const clientId = req.params.clientId;
+
+    // ⚠ Si l’ID est vide ou mal formé
+    if (!clientId || clientId.length < 10) {
+      return res.status(400).json({ message: "ID client invalide" });
+    }
+
+    // 🔍 Factures du client sans doublons
+    const factures = await Facture.find({ client: clientId })
+      .lean() // supprime les méthodes Mongoose, donne un tableau "pur"
+      .populate("client");
+
+    // ✅ Retirer les doublons (sûreté supplémentaire)
+    const facturesUniques = factures.filter(
+      (f, index, self) => index === self.findIndex((x) => x._id.toString() === f._id.toString())
+    );
+
+    res.json(facturesUniques);
+  } catch (err) {
+    console.error("❌ Erreur chargement factures client :", err);
+    res.status(500).json({ message: "Erreur chargement factures client" });
   }
 };

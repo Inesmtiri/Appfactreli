@@ -4,7 +4,8 @@ import {
   getClients,
   updateClient,
   deleteClient,
-  getKpiClients 
+  getTauxClientsActifs,
+  getClientById 
 } from '../controllers/clientController.js';
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.get('/', getClients);              // 🔄 Lister
 router.post('/', createClient);          // ➕ Créer
 router.put('/:id', updateClient);        // ✏️ Modifier
 router.delete('/:id', deleteClient);     // 🗑️ Supprimer
-router.get("/kpi", getKpiClients);
+router.get("/taux-actifs", getTauxClientsActifs);
+router.get('/:id', getClientById);
 export default router;

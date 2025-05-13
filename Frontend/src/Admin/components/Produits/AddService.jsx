@@ -40,10 +40,10 @@ const AddService = ({ show, onHide, onSave, service = null }) => {
       let response;
       if (service && service._id) {
         // 🔁 Si service existe => modifier
-        response = await axios.put(`http://localhost:3001/api/services/${service._id}`, serviceState);
+        response = await axios.put(`https://facterli-server-4.onrender.com/api/services/${service._id}`, serviceState);
       } else {
         // ➕ Sinon => créer
-        response = await axios.post("http://localhost:3001/api/services", serviceState);
+        response = await axios.post("https://facterli-server-4.onrender.com/api/services", serviceState);
       }
 
       if (onSave) onSave(response.data);
@@ -108,28 +108,31 @@ const AddService = ({ show, onHide, onSave, service = null }) => {
         </Form>
       </Modal.Body>
 
-      <Modal.Footer className="d-flex justify-content-center gap-3">
+      <Modal.Footer className="d-flex justify-content-end gap-2">
+        {/* Bouton Annuler - même style que DevisForm */}
+        <button
+        type="button"
+        onClick={onHide}
+        className="btn fw-bold text-primary border border-primary rounded-pill px-4 py-2 shadow-sm"
+        style={{ backgroundColor: "transparent", minWidth: "150px" }}
+      >
+        Annuler
+      </button>
+      
+      
+        {/* Bouton Créer ou Modifier */}
         <Button
-          style={{
-            backgroundColor: "#23BD15",
-            borderColor: "#23BD15",
-            minWidth: "120px"
-          }}
-          onClick={handleSave}
-        >
-          {service ? "Modifier" : "Créer"}
-        </Button>
+  onClick={handleSave}
+  className="shadow-sm rounded-pill fw-bold px-4 py-2 text-white"
+  style={{
+    backgroundColor: service ? "#ffc107" : "#00B507",
+    borderColor: service ? "#ffc107" : "#00B507",
+    minWidth: "150px",
+  }}
+>
+  {service ? "Modifier" : "Créer"}
+</Button>
 
-        <Button
-          style={{
-            backgroundColor: "#5B9BD5",
-            borderColor: "#5B9BD5",
-            minWidth: "120px"
-          }}
-          onClick={onHide}
-        >
-          Annuler
-        </Button>
       </Modal.Footer>
     </Modal>
   );

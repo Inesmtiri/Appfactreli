@@ -6,7 +6,6 @@ import {
   Button,
   Table,
   Card,
-  Badge,
 } from "react-bootstrap";
 import { FaTrash, FaPen } from "react-icons/fa";
 import AddProduitModal from "../components/Produits/AddProduit";
@@ -56,7 +55,7 @@ const ProduitServicePage = () => {
 
   const fetchProduits = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/produits");
+      const res = await axios.get("https://facterli-server-4.onrender.com/api/produits");
       setProduits(res.data);
     } catch (err) {
       console.error("Erreur chargement produits:", err);
@@ -65,7 +64,7 @@ const ProduitServicePage = () => {
 
   const fetchServices = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/services");
+      const res = await axios.get("https://facterli-server-4.onrender.com/api/services");
       setServices(res.data);
     } catch (err) {
       console.error("Erreur chargement services:", err);
@@ -75,11 +74,11 @@ const ProduitServicePage = () => {
   const handleAddProduit = async (produit) => {
     try {
       if (produitEnCours) {
-        const res = await axios.put(`http://localhost:3001/api/produits/${produitEnCours._id}`, produit);
+        const res = await axios.put(`https://facterli-server-4.onrender.com/api/produits/${produitEnCours._id}`, produit);
         setProduits(produits.map(p => p._id === produitEnCours._id ? res.data : p));
         setProduitEnCours(null);
       } else {
-        const res = await axios.post("http://localhost:3001/api/produits", produit);
+        const res = await axios.post("https://facterli-server-4.onrender.com/api/produits", produit);
         setProduits([...produits, res.data]);
       }
       setShowAddProduitModal(false);
@@ -91,11 +90,11 @@ const ProduitServicePage = () => {
   const handleAddService = async (service) => {
     try {
       if (serviceEnCours) {
-        const res = await axios.put(`http://localhost:3001/api/services/${serviceEnCours._id}`, service);
+        const res = await axios.put(`https://facterli-server-4.onrender.com/api/services/${serviceEnCours._id}`, service);
         setServices(services.map(s => s._id === serviceEnCours._id ? res.data : s));
         setServiceEnCours(null);
       } else {
-        const res = await axios.post("http://localhost:3001/api/services", service);
+        const res = await axios.post("https://facterli-server-4.onrender.com/api/services", service);
         setServices([...services, res.data]);
       }
       setShowAddServiceModal(false);
@@ -106,7 +105,7 @@ const ProduitServicePage = () => {
 
   const handleDeleteProduit = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/produits/${id}`);
+      await axios.delete(`https://facterli-server-4.onrender.com/api/produits/${id}`);
       setProduits(produits.filter((p) => p._id !== id));
     } catch (err) {
       console.error("Erreur suppression produit:", err);
@@ -115,7 +114,7 @@ const ProduitServicePage = () => {
 
   const handleDeleteService = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/services/${id}`);
+      await axios.delete(`https://facterli-server-4.onrender.com/api/services/${id}`);
       setServices(services.filter((s) => s._id !== id));
     } catch (err) {
       console.error("Erreur suppression service:", err);
@@ -128,16 +127,22 @@ const ProduitServicePage = () => {
     <Container className="mt-4">
       <Row className="mb-4 justify-content-end">
         <Col xs="auto">
-          <Button
-            style={{ backgroundColor: "#23BD15", borderColor: "#23BD15" }}
-            onClick={() => {
-              activeTab === "produits" ? setShowAddProduitModal(true) : setShowAddServiceModal(true);
-              setProduitEnCours(null);
-              setServiceEnCours(null);
-            }}
-          >
-            Ajouter
-          </Button>
+        <Button
+  className="shadow-sm rounded-pill fw-bold px-4 py-2 text-white"
+  style={{
+    backgroundColor: "#23BD15",
+    borderColor: "#23BD15",
+    minWidth: "150px",
+  }}
+  onClick={() => {
+    activeTab === "produits" ? setShowAddProduitModal(true) : setShowAddServiceModal(true);
+    setProduitEnCours(null);
+    setServiceEnCours(null);
+  }}
+>
+  Ajouter
+</Button>
+
         </Col>
       </Row>
 
@@ -169,31 +174,42 @@ const ProduitServicePage = () => {
                   </td>
                   {activeTab === "produits" && (
                     <td>
-                      <Badge
-                        bg={item.stockActuel === 0 ? "danger" : "warning"}
-                        className="text-capitalize px-3 py-2"
-                      >
-                        {item.stockActuel === 0 ? "Rupture" : "En stock"}
-                      </Badge>
+                     <span
+  style={{
+    backgroundColor: item.stockActuel === 0 ? "#F8D7DA" : "#FFF3CD", // 🔴 ou 🟡 pastel
+    color: item.stockActuel === 0 ? "#721c24" : "#856404",           // texte foncé
+    padding: "6px 12px",
+    borderRadius: "20px",
+    fontWeight: "500",
+    display: "inline-block",
+    textTransform: "capitalize",
+    fontSize: "0.875rem",
+  }}
+>
+  {item.stockActuel === 0 ? "Rupture" : "En stock"}
+</span>
+
+
                     </td>
                   )}
                   <td>
                     <div className="d-flex justify-content-center gap-2">
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        onClick={() => {
-                          if (activeTab === "produits") {
-                            setProduitEnCours(item);
-                            setShowAddProduitModal(true);
-                          } else {
-                            setServiceEnCours(item);
-                            setShowAddServiceModal(true);
-                          }
-                        }}
-                      >
-                        <FaPen />
-                      </Button>
+                    <Button
+  variant="outline-success"
+  size="sm"
+  onClick={() => {
+    if (activeTab === "produits") {
+      setProduitEnCours(item);
+      setShowAddProduitModal(true);
+    } else {
+      setServiceEnCours(item);
+      setShowAddServiceModal(true);
+    }
+  }}
+>
+  <FaPen className="text-primary" />
+</Button>
+
                       <Button
                         variant="outline-danger"
                         size="sm"

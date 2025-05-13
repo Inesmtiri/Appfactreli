@@ -6,9 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   telephone: String,
-  role: { type: String, enum: ['admin', 'client'], default: 'client' },
-  resetCode: String,                 // 👈 code à 6 chiffres
-  resetCodeExpire: Date             // 👈 durée de validité
+  role: { type: String, enum: ['admin', 'client'], default: 'client' }
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

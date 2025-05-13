@@ -4,88 +4,118 @@ import {
   PieChart,
   Pie,
   Cell,
+  ResponsiveContainer,
   Tooltip,
-  Legend,
-  ResponsiveContainer
 } from "recharts";
 
-const COLORS = ["#28a745", "#dc3545", "#ffc107"];
-
-const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }) => {
-  const RADIAN = Math.PI / 180;
-  const radius = outerRadius + 8;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="#000"
-      textAnchor={x > cx ? "start" : "end"}
-      dominantBaseline="central"
-      fontSize={12}
-      fontWeight="bold"
-    >
-      {`${(percent * 100).toFixed(1)}%`}
-    </text>
-  );
-};
+const COLORS = ["#2a9d8f", "#95e5c5"]; // 🌿 Vert d’eau foncé, clair
 
 const KpiDevisChart = () => {
-  const [data, setData] = useState([]);
+  const [taux, setTaux] = useState(0);
+  const [tendance, setTendance] = useState(0);
+  const [variation, setVariation] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchKpi = async () => {
+    const fetchTauxConversion = async () => {
       try {
-        const res = await axios.get("/api/devis/kpi");
-        const kpi = res.data.taux;
-        setData([
-          { name: "Acceptés", value: parseFloat(kpi.acceptés) },
-          { name: "Refusés", value: parseFloat(kpi.refusés) },
-          { name: "En attente", value: parseFloat(kpi.enAttente) },
-        ]);
-      } catch (error) {
-        console.error("Erreur chargement KPI :", error);
+        const res = await axios.get("/api/devis/taux-conversion");
+        setTaux(parseFloat(res.data.taux));
+        setTendance(parseFloat(res.data.tendance));
+        setVariation(res.data.variation);
+      } catch (err) {
+        console.error("Erreur chargement taux de conversion :", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchKpi();
+    fetchTauxConversion();
   }, []);
 
-  if (!data.length) return <p>Chargement...</p>;
+  const data = [
+    { name: "Convertis", value: taux },
+    { name: "Non convertis", value: 100 - taux },
+  ];
 
   return (
-    <div style={{ width: "100%" }}>
-      <h6 className="text-center mb-2">📊 Taux des devis</h6>
-      <ResponsiveContainer width="100%" height={200}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={50}
-            outerRadius={75}
-            labelLine={false}
-            label={renderCustomizedLabel}
-            dataKey="value"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
-          <Legend
-            verticalAlign="bottom"
-            iconType="circle"
-            formatter={(value, entry, index) => (
-              <span style={{ color: COLORS[index], fontWeight: 500, fontSize: 13 }}>
-                {value}
+    <div className="text-center">
+      <div className="d-flex justify-content-between align-items-center px- mb-2 gap-4">
+        <p className="fw-semibold mb-0">Taux de conversion des devis      </p>
+        {!loading && (
+          <>
+            {variation === "en hausse" && (
+              <span className="text-success fw-bold d-flex align-items-center gap-3">
+                <span style={{ fontSize: "1rem" }}>▲</span>
+                {tendance.toFixed(1)}%
               </span>
             )}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+            {variation === "en baisse" && (
+              <span className="text-danger fw-bold d-flex align-items-center gap-1">
+                <span style={{ fontSize: "1rem" }}>▼</span>
+                {tendance.toFixed(1)}%
+              </span>
+            )}
+            {variation === "stable" && (
+              <span className="text-secondary fw-bold d-flex align-items-center gap-1">
+                <span style={{ fontSize: "0.8rem" }}>●</span>
+                {tendance.toFixed(1)}%
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="text-muted">Chargement...</p>
+      ) : (
+        <div style={{ position: "relative", width: "100%", height: 160 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={70}
+                innerRadius={45}
+                startAngle={90}
+                endAngle={-270}
+                labelLine={false}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              fontWeight: "bold",
+              fontSize: "18px",
+              color: "#2a9d8f",
+            }}
+          >
+            {taux.toFixed(0)}%
+          </div>
+        </div>
+      )}
+
+      <div className="d-flex justify-content-center gap-3 mt-0 small">
+        <div className="d-flex align-items-center gap-1">
+          <span style={{ color: COLORS[0], fontSize: "1.2rem" }}>●</span> Convertis
+        </div>
+        <div className="d-flex align-items-center gap-1">
+          <span style={{ color: COLORS[1], fontSize: "1.2rem" }}>●</span> Non convertis
+        </div>
+      </div>
     </div>
   );
 };

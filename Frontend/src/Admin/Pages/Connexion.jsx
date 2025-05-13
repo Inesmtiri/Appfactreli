@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Link } from "react-router-dom";
-
 export default function Connexion() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,7 +10,7 @@ export default function Connexion() {
     e.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:3001/api/auth/login", {
+      const res = await axios.post("https://facterli-server-4.onrender.com/api/auth/login", {
         email,
         password,
       });
@@ -35,7 +33,7 @@ export default function Connexion() {
   return (
     <div
       className="d-flex justify-content-center align-items-center vh-100"
-      style={{ backgroundColor: "#167db8" }}
+      style={{ backgroundColor: "#4dabf7" }}
     >
       {/* Logo / titre */}
       <div className="text-center fst-italic text-white position-absolute top-0 mt-4 fs-2 fw-bold">
@@ -47,7 +45,7 @@ export default function Connexion() {
         className="bg-white p-5 rounded-5 shadow-lg text-center d-flex flex-column justify-content-center"
         style={{ width: "480px", height: "500px" }}
       >
-        <h2 className="fs-2 fst-italic fw-semibold mb-4">Connexion</h2>
+        <h2 className="fs-2 fst-italic  fw-semibold mb-4">Connexion</h2>
 
         {message && <div className="alert alert-danger">{message}</div>}
 
@@ -68,20 +66,17 @@ export default function Connexion() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button className="btn btn-vert w-100 p-3 rounded-4" type="submit">
+<button
+  className="btn w-100 p-3 rounded-4 border-0 text-white"
+  style={{ backgroundColor: "#00cc44", color: "#155724" }} // couleur texte adaptée
+  type="submit"
+>
             Connexion
-          </button>
+            </button>
         </form>
 
         {/* Liens vers les autres pages */}
-        <div className="d-flex justify-content-between mt-4">
-          <Link to="/forgotpassword" className="text-primary text-decoration-none">
-            Mot de passe oublié ?
-          </Link>
-          <Link to="/inscription" className="text-primary text-decoration-none">
-            Créer un compte
-          </Link>
-        </div>
+       
       </div>
     </div>
   );

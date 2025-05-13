@@ -16,7 +16,7 @@ export default function MesFacturesClient() {
         }
 
         const clientId = client.id || client._id;
-        const res = await axios.get(`http://localhost:3001/api/mes-factures/${clientId}`);
+        const res = await axios.get(`https://facterli-server-4.onrender.com/api/mes-factures/${clientId}`);
         setFactures(res.data);
       } catch (err) {
         console.error("❌ Erreur lors du chargement des factures :", err);

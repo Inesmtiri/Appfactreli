@@ -1,47 +1,66 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaUsers } from "react-icons/fa";
+import { FaUsers, FaArrowDown, FaArrowUp } from "react-icons/fa";
 
 const KpiClientsActifs = () => {
-  const [data, setData] = useState({ total: 0, actifs: 0 });
+  const [data, setData] = useState({
+    taux: 0,
+    variation: 0,
+    tendance: "",
+  });
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchTauxActifs = async () => {
       try {
-        const res = await axios.get("/api/clients/kpi");
+        const res = await axios.get("/api/clients/taux-actifs");
         setData(res.data);
       } catch (err) {
-        console.error("Erreur chargement clients actifs :", err);
+        console.error("Erreur chargement taux clients actifs :", err);
       }
     };
 
-    fetchClients();
+    fetchTauxActifs();
   }, []);
 
-  const pourcentage = data.total ? ((data.actifs / data.total) * 100).toFixed(1) : 0;
-
   return (
-    <div className="card shadow-sm border-0 h-100">
-      <div className="card-body d-flex justify-content-between align-items-center">
-        <div>
-          <p className="text-muted mb-1">Clients Actifs</p>
-          <h4 className="fw-bold mb-0">
-            {data.actifs} / {data.total}{" "}
-            <span className="text-success" style={{ fontSize: "0.85rem" }}>
-              ({pourcentage}%)
-            </span>
-          </h4>
-        </div>
+    <div
+      className="card border-0 h-100 rounded-4"
+      style={{
+        background: "linear-gradient(135deg, #c3f8e5, #95e5c5)",
+      }}
+    >
+      <div className="card-body d-flex flex-column align-items-center text-center">
         <div
-          className="rounded-circle d-flex align-items-center justify-content-center"
+          className="mb-2 d-flex align-items-center justify-content-center rounded-circle"
           style={{
-            backgroundColor: "#20c997", // Vert clair
-            width: 44,
-            height: 44,
+            backgroundColor: "rgba(255, 255, 255, 0.2)",
+            width: 50,
+            height: 50,
           }}
         >
-          <FaUsers className="text-white fs-5" />
+          <FaUsers style={{ color: "#f1f3f5" }} className="fs-4" />
         </div>
+        <p style={{ color: "#f1f3f5" }} className="mb-1">Clients Actifs</p>
+        <h4 style={{ color: "#f1f3f5" }} className="fw-bold mb-0">
+          {data.taux}%
+        </h4>
+        <small
+          className="d-flex align-items-center"
+          style={{ color: "#f1f3f5" }}
+        >
+          {data.tendance === "en hausse" && (
+            <>
+              <FaArrowUp className="me-1" />
+              {data.variation}%
+            </>
+          )}
+          {data.tendance === "en baisse" && (
+            <>
+              <FaArrowDown className="me-1" />
+              {data.variation}%
+            </>
+          )}
+        </small>
       </div>
     </div>
   );

@@ -2,6 +2,21 @@ import Client from "../models/Client.js";
 import Devis from "../models/devis.js";
 import Facture from "../models/facture.js";
 
+
+// 🔍 Obtenir un client par ID
+export const getClientById = async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id);
+    if (!client) {
+      return res.status(404).json({ message: "Client introuvable" });
+    }
+    res.json(client);
+  } catch (error) {
+    console.error("❌ Erreur getClientById :", error.message);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 // ➕ Créer un client
 export const createClient = async (req, res) => {
   try {
@@ -49,28 +64,57 @@ export const deleteClient = async (req, res) => {
     res.status(500).json({ message: "Erreur suppression", error: error.message });
   }
 };
-
-// 📊 ✅ KPI Clients actifs (basé sur activité réelle)
-export const getKpiClients = async (req, res) => {
+export const getTauxClientsActifs = async (req, res) => {
   try {
-    const total = await Client.countDocuments();
+    const now = new Date();
 
-    // Récupère tous les IDs de clients mentionnés dans devis et factures
-    const devisClients = await Devis.distinct("clientId");
-    const factureClients = await Facture.distinct("client");
+    // 🔹 Mois courant
+    const startCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    // Fusionne les deux tableaux dans un Set
-    const allActifsIds = [...new Set([...devisClients, ...factureClients])];
+    // 🔹 Mois précédent
+    const startPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endPrevMonth = startCurrentMonth;
 
-    // Vérifie que les IDs existent bien dans la collection Client
-    const actifs = await Client.countDocuments({ _id: { $in: allActifsIds } });
+    // 🔢 Nombre total de clients
+    const totalClients = await Client.countDocuments();
+
+    // 📊 Fonction utilisant aggregate pour obtenir les clients actifs par période
+    const getClientsActifs = async (start, end) => {
+      const result = await Facture.aggregate([
+        { $match: { createdAt: { $gte: start, $lt: end } } },
+        { $group: { _id: "$client" } },
+        { $count: "nbClients" }
+      ]);
+      return result.length > 0 ? result[0].nbClients : 0;
+    };
+
+    const [actifsPrecedent, actifsCourant] = await Promise.all([
+      getClientsActifs(startPrevMonth, endPrevMonth),
+      getClientsActifs(startCurrentMonth, endCurrentMonth),
+    ]);
+
+    const tauxPrec = totalClients ? (actifsPrecedent / totalClients) * 100 : 0;
+    const tauxCourant = totalClients ? (actifsCourant / totalClients) * 100 : 0;
+
+    const tendanceValue = tauxPrec
+      ? ((tauxCourant - tauxPrec) / tauxPrec) * 100
+      : 0;
+
+    const tendance =
+      tendanceValue > 0 ? "en hausse" :
+      tendanceValue < 0 ? "en baisse" :
+      "stable";
 
     res.json({
-      total,
-      actifs,
+      mois: `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`,
+      taux: tauxCourant.toFixed(1),
+      variation: Math.abs(tendanceValue).toFixed(1),
+      tendance
     });
+
   } catch (err) {
-    console.error("❌ Erreur KPI clients actifs :", err);
-    res.status(500).json({ message: "Erreur chargement KPI clients" });
+    console.error("❌ Erreur taux clients actifs :", err);
+    res.status(500).json({ message: "Erreur serveur", error: err });
   }
 };

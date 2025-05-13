@@ -4,18 +4,17 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import userRoutes from './routes/userRoutes.js';
-import aboutRoutes from './routes/aboutRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import paiementRoutes from './routes/paiementRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import produitRoutes from './routes/produitRoutes.js';
 import devisRoutes from './routes/devisRoutes.js';
 import factureRoutes from "./routes/factureRoutes.js";
-import emailRoutes from "./routes/emailRoutes.js";
 import depenseRoutes from "./routes/depenseRoutes.js";
 import authRoutes from './routes/authRoutes.js';
 import clientDevisRoutes from "./routes/clientDevisRoutes.js";
 import mesFacturesRoutes from "./routes/mesFacturesRoutes.js"; // ✅ export corrigé
+import stockRoutes from "./routes/stockRoutes.js";
 
 dotenv.config();
 
@@ -27,7 +26,6 @@ app.use(express.json());
 
 // 🔗 Routes
 app.use('/api/users/', userRoutes);
-app.use('/api/about', aboutRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/paiements', paiementRoutes);
 app.use('/api/services', serviceRoutes);
@@ -35,10 +33,10 @@ app.use('/api/produits', produitRoutes);
 app.use('/api/devis', devisRoutes);
 app.use('/api/factures', factureRoutes);
 app.use('/api/depenses', depenseRoutes);
-app.use('/api/email', emailRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/mes-devis', clientDevisRoutes);
 app.use('/api/mes-factures', mesFacturesRoutes); // ✅ maintenant fonctionne
+app.use("/api/stock", stockRoutes);
 
 // 🌐 Route de test
 app.get('/', (req, res) => {

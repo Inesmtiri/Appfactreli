@@ -35,7 +35,7 @@ const EditClientProfileModal = ({ show, onClose, user = {}, onSave }) => {
     }
 
     try {
-      const response = await axios.put(`http://localhost:3001/api/clients/${user._id}`, {
+      const response = await axios.put(`https://facterli-server-4.onrender.com/api/clients/${user._id}`, {
         prenom,
         nom,
         email,

@@ -15,7 +15,7 @@ const ClientPage = () => {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get("http://localhost:3001/api/clients");
+        const res = await axios.get("https://facterli-server-4.onrender.com/api/clients");
         setClients(res.data);
       } catch (error) {
         console.error("❌ Erreur chargement clients :", error);
@@ -37,7 +37,7 @@ const ClientPage = () => {
 
   const handleAddClient = async (clientData) => {
     try {
-      const res = await axios.post("http://localhost:3001/api/clients", clientData);
+      const res = await axios.post("https://facterli-server-4.onrender.com/api/clients", clientData);
       const updatedList = [...clients, res.data];
       setClients(updatedList);
     } catch (error) {
@@ -49,7 +49,7 @@ const ClientPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/clients/${id}`);
+      await axios.delete(`https://facterli-server-4.onrender.com/api/clients/${id}`);
       setClients(clients.filter((client) => client._id !== id));
     } catch (error) {
       console.error("❌ Erreur suppression client :", error);
@@ -64,7 +64,7 @@ const ClientPage = () => {
   const handleUpdateClient = async (updatedClient) => {
     try {
       const res = await axios.put(
-        `http://localhost:3001/api/clients/${updatedClient._id}`,
+        `https://facterli-server-4.onrender.com/api/clients/${updatedClient._id}`,
         updatedClient
       );
       const updatedList = clients.map((c) => (c._id === res.data._id ? res.data : c));
@@ -78,13 +78,13 @@ const ClientPage = () => {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container mt-4">
       {/* ✅ Formulaire d’ajout ou modification */}
       {showForm && (
         <ClientForm
           onAddClient={handleAddClient}
           onUpdateClient={handleUpdateClient}
-          onCancel={() => {
+          onClose={() => {
             setShowForm(false);
             setClientToEdit(null);
           }}
@@ -92,36 +92,44 @@ const ClientPage = () => {
         />
       )}
 
-      {/* ✅ Carte formulaire */}
-      <div className="card mb-4 shadow-sm mx-auto" style={{ maxWidth: "1150px" }}>
+      {/* ✅ Carte formulaire avec style harmonisé */}
+      <div className="card shadow-lg mb-4 border-0 rounded-4 mx-auto" style={{ maxWidth: "1200px" }}>
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="card-title fw-semibold">
+            <h5 className="fw-semibold text-primary mb-0">
               {clientToEdit ? "✏️ Modifier un client" : "➕ Ajouter un client"}
             </h5>
             <Button
-              size="sm"
-              onClick={() => setShowForm(true)}
-              className="fw-bold text-white"
-              style={{
-                backgroundColor: "#00cc44",
-                borderColor: "#00cc44",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-              }}
-            >
-              + Ajouter
-            </Button>
+  
+  size="sm"
+  onClick={() => {
+    setShowForm(true);
+    setClientToEdit(null); // important pour différencier création/modification
+  }}
+  className="fw-bold shadow-sm rounded-pill px-4 py-2"
+  style={{
+    backgroundColor: "#00cc44",
+    borderColor: "#00cc44",
+    color: "#fff",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+    minWidth: "130px",
+  }}
+>
+  Ajouter
+</Button>
+
+
           </div>
         </div>
       </div>
 
-      {/* ✅ Carte tableau clients */}
-      <div className="card mx-auto shadow-sm" style={{ maxWidth: "1150px" }}>
+      {/* ✅ Carte tableau clients avec style unifié */}
+      <div className="card shadow-lg border-0 rounded-4 mx-auto" style={{ maxWidth: "1200px" }}>
         <div className="card-body">
-          <h5 className="card-title fw-semibold mb-3">📋 Liste des clients</h5>
+          <h5 className="fw-semibold text-primary mb-4">📋 Liste des clients</h5>
           <div className="table-responsive">
-            <Table bordered hover responsive size="sm" style={{ fontSize: "15px" }}>
-              <thead className="table-light">
+            <Table striped hover responsive className="align-middle text-center">
+              <thead className="bg-light text-muted">
                 <tr>
                   <th>Nom</th>
                   <th>Prénom</th>
@@ -141,11 +149,10 @@ const ClientPage = () => {
                       <td>{client.societe}</td>
                       <td>{client.telephone}</td>
                       <td className="text-center">
-                        <div className="btn-group">
+                        <div className="d-flex justify-content-center gap-2">
                           <Button
                             variant="outline-primary"
                             size="sm"
-                            className="me-1"
                             title="Modifier"
                             onClick={() => handleEditClick(client)}
                           >
