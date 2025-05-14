@@ -9,15 +9,17 @@ export default function MesFacturesClient() {
   useEffect(() => {
     const fetchFactures = async () => {
       try {
-        let client = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData"));
-        if (!client || (!client.id && !client._id)) {
-          console.warn("❌ Aucun client connecté ou ID manquant dans localStorage");
+        const rawClient = JSON.parse(localStorage.getItem("userData"));
+        const clientId = rawClient?._id || rawClient?.id?._id;
+
+        if (!clientId) {
+          console.warn("❌ ID client introuvable dans localStorage");
           return;
         }
 
-        const clientId = client.id || client._id;
         const res = await axios.get(`https://facterli-server-4.onrender.com/api/mes-factures/${clientId}`);
-        setFactures(res.data);
+        const filtered = res.data.filter(f => f.client?._id === clientId);
+        setFactures(filtered);
       } catch (err) {
         console.error("❌ Erreur lors du chargement des factures :", err);
       }
@@ -153,16 +155,19 @@ export default function MesFacturesClient() {
                 <hr />
                 <p className="fw-bold">{facture.total?.toFixed(3)} TND</p>
                 <span
-                  className={`badge w-100 py-2 ${
-                    facture.statut === "payé"
-                      ? "bg-success"
-                      : facture.statut === "partiellement payé"
-                      ? "bg-warning text-dark"
-                      : "bg-danger"
-                  }`}
-                >
-                  {facture.statut}
-                </span>
+  className="badge w-100 py-2 text-white fw-bold"
+  style={{
+    backgroundColor:
+      facture.statut === "payé"
+        ? "#00cc00"
+        : facture.statut === "partiellement payé"
+        ? "#ffc107"
+        : "#dc3545"
+  }}
+>
+  {facture.statut}
+</span>
+
               </div>
             </div>
           ))}

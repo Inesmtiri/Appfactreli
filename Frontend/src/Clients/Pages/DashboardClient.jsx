@@ -7,9 +7,9 @@ const DashboardClient = () => {
   const [nbFactures, setNbFactures] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Gestion robuste du client ID (compatibilité "user" ou "userData")
-  const clientData = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData"));
-  const clientId = clientData?.id || clientData?._id;
+  // ✅ Récupération fiable de l'ID client
+  const clientRaw = JSON.parse(localStorage.getItem("userData")) || JSON.parse(localStorage.getItem("user"));
+  const clientId = clientRaw?._id || clientRaw?.id?._id;
 
   useEffect(() => {
     const fetchData = async () => {
