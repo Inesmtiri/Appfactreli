@@ -445,9 +445,17 @@ useEffect(() => {
   
                 {/* Suite (date, numéro, référence) */}
                 <div className="row mb-3">
-                  <div className="col">
-                    <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
-                  </div>
+                <div className="col">
+  <label>Date</label>
+  <input
+    type="date"
+    className="form-control"
+    value={date}
+    onChange={(e) => setDate(e.target.value)}
+    max={new Date().toISOString().split("T")[0]} // limite à aujourd’hui
+  />
+</div>
+
                   <div className="col">
                     <input type="text" className="form-control" value={numeroFacture} disabled />
                   </div>

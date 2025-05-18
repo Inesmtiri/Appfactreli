@@ -477,7 +477,17 @@ const DevisForm = ({ onAddDevis, onCancel, editData }) => {
 
                 {/* Infos devis */}
                 <div className="row mb-3">
-                  <div className="col"><label>Date</label><input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+                <div className="col">
+  <label>Date</label>
+  <input
+    type="date"
+    className="form-control"
+    value={date}
+    onChange={(e) => setDate(e.target.value)}
+    max={new Date().toISOString().split("T")[0]} // limite à aujourd’hui
+  />
+</div>
+
                   <div className="col"><label>Numéro</label><input type="text" className="form-control" value={numeroDevis} disabled /></div>
                   <div className="col"><label>Référence</label><input type="text" className="form-control" value={reference} onChange={(e) => setReference(e.target.value)} /></div>
                   <div className="col-2"><label>TVA (%)</label><input type="number" className="form-control" value={tva} onChange={(e) => setTva(parseFloat(e.target.value))} /></div>

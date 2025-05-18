@@ -140,14 +140,14 @@ const DevisPage = () => {
           : `/uploads/${devis.logo}`
         : URL.createObjectURL(devis.logo)
       : "";
-  
+
     const remise = devis.remise || 0;
     const subtotal = devis.subtotal || 0;
     const remiseMontant = subtotal * (remise / 100);
     const tax = devis.tax || 0;
     const total = devis.total || subtotal - remiseMontant + tax;
     const tvaRate = subtotal ? ((tax / (subtotal - remiseMontant)) * 100).toFixed(0) : 19;
-  
+
     const html = `
       <html>
         <head>
@@ -291,7 +291,7 @@ const DevisPage = () => {
         </body>
       </html>
     `;
-  
+
     const win = window.open("", "_blank", "width=900,height=700");
     win.document.write(html);
     win.document.close();
@@ -299,7 +299,19 @@ const DevisPage = () => {
 
   return (
     <Container className="mt-4">
-      {showForm ? (
+      {showFactureForm ? (
+        <FactureForm
+          editData={convertData}
+          onAddFacture={() => {
+            setShowFactureForm(false);
+            setConvertData(null);
+          }}
+          onCancel={() => {
+            setShowFactureForm(false);
+            setConvertData(null);
+          }}
+        />
+      ) : showForm ? (
         <DevisForm
           onAddDevis={handleAddDevis}
           onCancel={() => {
@@ -312,22 +324,19 @@ const DevisPage = () => {
       ) : (
         <>
           <Row className="mb-4 justify-content-end">
-  <Col xs="auto">
-    <Button
-      onClick={() => {
-        setShowForm(true);
-      }}
-      className="btn btn-vert fw-bold shadow-sm rounded-pill px-4 py-2"
-      style={{ minWidth: "130px" }}
-    >
-      Ajouter
-    </Button>
-  </Col>
-
-
-
+            <Col xs="auto">
+              <Button
+                onClick={() => {
+                  setShowForm(true);
+                }}
+                className="btn btn-vert fw-bold shadow-sm rounded-pill px-4 py-2"
+                style={{ minWidth: "130px" }}
+              >
+                Ajouter
+              </Button>
+            </Col>
           </Row>
-
+  
           <Card className="shadow-lg p-4 mx-auto border-0 rounded-4" style={{ maxWidth: "1200px" }}>
             <h5 className="mb-4 fw-semibold text-primary">Liste des devis</h5>
             {filteredDevis.length > 0 ? (
@@ -346,44 +355,65 @@ const DevisPage = () => {
                     <tr key={devis._id} className="align-middle">
                       <td className="text-start">
                         <div className="fw-semibold">
-                          {typeof devis.client === "object" ? `${devis.client.nom} ${devis.client.prenom}` : devis.client}
+                          {typeof devis.client === "object"
+                            ? `${devis.client.nom} ${devis.client.prenom}`
+                            : devis.client}
                         </div>
                         <small className="text-muted">{devis.numeroDevis}</small>
                       </td>
                       <td>{devis.date?.slice(0, 10)}</td>
                       <td>{devis.total?.toFixed(3)} TND</td>
                       <td>
-                      <span
-  className="px-1 py-1 text-capitalize rounded-pill fw-semibold"
-  style={{
-    backgroundColor:
-      devis.statut === "accepté"
-        ? "#D8F3DC"
-        : devis.statut === "refusé"
-        ? "#F8D7DA"
-        : "#FFF3CD",
-    color:
-      devis.statut === "accepté"
-        ? "#155724"
-        : devis.statut === "refusé"
-        ? "#721c24"
-        : "#856404",
-  }}
->
-  {devis.statut}
-</span>
-
-
-
-
+                        <span
+                          className="px-1 py-1 text-capitalize rounded-pill fw-semibold"
+                          style={{
+                            backgroundColor:
+                              devis.statut === "accepté"
+                                ? "#D8F3DC"
+                                : devis.statut === "refusé"
+                                ? "#F8D7DA"
+                                : "#FFF3CD",
+                            color:
+                              devis.statut === "accepté"
+                                ? "#155724"
+                                : devis.statut === "refusé"
+                                ? "#721c24"
+                                : "#856404",
+                          }}
+                        >
+                          {devis.statut}
+                        </span>
                       </td>
                       <td>
                         <div className="d-flex justify-content-center gap-2">
-                          <Button variant="outline-primary" size="sm" onClick={() => handleViewDevis(devis)}><FaFileAlt /></Button>
-                          <Button variant="outline-success" size="sm" onClick={() => handleEditDevis(devis)}><FaPen /></Button>
-                          <Button variant="outline-danger" size="sm" onClick={() => handleDeleteDevis(devis._id)}><FaTrash /></Button>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => handleViewDevis(devis)}
+                          >
+                            <FaFileAlt />
+                          </Button>
+                          <Button
+                            variant="outline-success"
+                            size="sm"
+                            onClick={() => handleEditDevis(devis)}
+                          >
+                            <FaPen />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDeleteDevis(devis._id)}
+                          >
+                            <FaTrash />
+                          </Button>
                           {devis.statut === "accepté" && (
-                            <Button variant="outline-warning" size="sm" onClick={() => handleConvertToFacture(devis)} title="Convertir en facture">
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              onClick={() => handleConvertToFacture(devis)}
+                              title="Convertir en facture"
+                            >
                               <FaExchangeAlt />
                             </Button>
                           )}
@@ -399,22 +429,9 @@ const DevisPage = () => {
           </Card>
         </>
       )}
-
-      {showFactureForm && (
-        <FactureForm
-          editData={convertData}
-          onAddFacture={() => {
-            setShowFactureForm(false);
-            setConvertData(null);
-          }}
-          onCancel={() => {
-            setShowFactureForm(false);
-            setConvertData(null);
-          }}
-        />
-      )}
     </Container>
   );
+  
 };
 
 export default DevisPage;
